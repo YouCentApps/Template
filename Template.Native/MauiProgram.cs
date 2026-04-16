@@ -1,0 +1,76 @@
+﻿using Microsoft.Extensions.Logging;
+using Template.Native.Services;
+using Template.Shared.Configuration;
+using Template.Shared.Services.Api;
+using Template.Shared.Services.State;
+
+namespace Template.Native;
+
+public static class MauiProgram
+{
+	public static MauiApp CreateMauiApp()
+	{
+		var builder = MauiApp.CreateBuilder();
+		builder
+			.UseMauiApp<App>()
+			.ConfigureFonts(fonts =>
+			{
+				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+			});
+
+		builder.Services.AddMauiBlazorWebView();
+
+#if DEBUG
+		builder.Services.AddBlazorWebViewDeveloperTools();
+		builder.Logging.AddDebug();
+#endif
+
+		// Environment and settings
+		var environment = new NativeMyEnvironment();
+		var settings = new Settings(environment);
+
+		var appConfig = new AppConfiguration
+		{
+			ApiBaseUrl = settings.ApiUrl,
+			IsDevelopment = environment.IsDevelopment()
+		};
+
+		builder.Services.AddSingleton<IMyEnvironment>(environment);
+		builder.Services.AddSingleton<ISettings>(settings);
+		builder.Services.AddSingleton<IAppConfiguration>(appConfig);
+
+		// Storage (MAUI Preferences)
+		builder.Services.AddSingleton<IStorageService, NativeStorageService>();
+
+		// Auth state
+		builder.Services.AddSingleton<AuthStateService>(sp =>
+		{
+			var storageService = sp.GetRequiredService<IStorageService>();
+			return new AuthStateService(storageService);
+		});
+
+		// HTTP client with auth handler
+		builder.Services.AddTransient<AuthenticationMessageHandler>();
+		builder.Services.AddSingleton(sp =>
+		{
+			var config = sp.GetRequiredService<IAppConfiguration>();
+			var authHandler = sp.GetRequiredService<AuthenticationMessageHandler>();
+			authHandler.InnerHandler = new HttpClientHandler();
+
+			return new HttpClient(authHandler) { BaseAddress = new Uri(config.ApiBaseUrl) };
+		});
+
+		builder.Services.AddSingleton<ITemplateApiClient, TemplateApiClient>();
+
+		var app = builder.Build();
+
+		// Initialize auth state
+		Task.Run(async () =>
+		{
+			var authState = app.Services.GetRequiredService<AuthStateService>();
+			await authState.InitializeAsync();
+		}).Wait();
+
+		return app;
+	}
+}

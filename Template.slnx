@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Docs/DB_STRUCTURE.md" />
+    <File Path="Tools/Rename-Template.ps1" />
+    <Project Path="Tools/Template.DbInit/Template.DbInit.csproj" />
+  </Folder>
+  <Project Path="Template.Api/Template.Api.csproj" />
+  <Project Path="Template.Native/Template.Native.csproj" />
+  <Project Path="Template.Shared/Template.Shared.csproj" />
+  <Project Path="Template.Web/Template.Web.csproj" />
+</Solution>

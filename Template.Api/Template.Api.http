@@ -1,0 +1,41 @@
+@Template.Api_HostAddress = https://localhost:7224
+
+### Health Check
+GET {{Template.Api_HostAddress}}/api/health
+Accept: application/json
+
+### Register - Send Verification
+POST {{Template.Api_HostAddress}}/api/auth/register/send-verification
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "username": "testuser",
+  "password": "Test1234!"
+}
+
+### Sign In
+POST {{Template.Api_HostAddress}}/api/auth/signin
+Content-Type: application/json
+
+{
+  "emailOrUsername": "testuser",
+  "password": "Test1234!"
+}
+
+### Validate Session
+POST {{Template.Api_HostAddress}}/api/auth/validate-session
+Content-Type: application/json
+
+{
+  "sessionId": "your-session-id-here"
+}
+
+### Get Profile (requires X-Session-Id header)
+GET {{Template.Api_HostAddress}}/api/profile
+X-Session-Id: your-session-id-here
+
+### Get Admin Status
+GET {{Template.Api_HostAddress}}/api/admin/me
+X-Session-Id: your-session-id-here
+

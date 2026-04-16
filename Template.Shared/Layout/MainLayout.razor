@@ -1,0 +1,135 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@using Template.Shared.Services.State
+@using Template.Shared.Services.Api
+@inject AuthStateService AuthState
+@inject ITemplateApiClient ApiClient
+@inject NavigationManager Navigation
+
+<div class="app-container">
+    <header class="app-header">
+        <div class="header-content">
+            <a href="/" class="logo">Template</a>
+
+            <nav class="main-nav">
+                @if (AuthState.IsAuthenticated)
+                {
+                    <div class="profile-dropdown" @onfocusout="CloseDropdownDelayed">
+                        <button class="profile-btn" @onclick="ToggleDropdown" @onclick:stopPropagation="true">
+                            <span class="profile-name">@AuthState.Username</span>
+                            <span class="dropdown-arrow">&#x25BC;</span>
+                        </button>
+                        @if (showProfileDropdown)
+                        {
+                            <div class="dropdown-menu">
+                                <a href="/settings" class="dropdown-item" @onclick="CloseDropdown">
+                                    Settings
+                                </a>
+                                @if (isAdmin)
+                                {
+                                    <a href="/admin" class="dropdown-item" @onclick="CloseDropdown">
+                                        Admin
+                                    </a>
+                                }
+                                <a class="dropdown-item" @onclick="SignOut">
+                                    Sign Out
+                                </a>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <a href="/signin">Sign In</a>
+                    <a href="/signup">Sign Up</a>
+                }
+            </nav>
+        </div>
+    </header>
+
+    <main class="app-main">
+        @Body
+    </main>
+
+    <footer class="app-footer">
+        <p>&copy; @DateTime.Now.Year Template App</p>
+    </footer>
+</div>
+
+@code {
+    private bool showProfileDropdown = false;
+    private bool isAdmin = false;
+    private System.Timers.Timer? closeTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        AuthState.OnAuthStateChanged += OnAuthStateChanged;
+        await CheckAdminStatus();
+    }
+
+    private async void OnAuthStateChanged()
+    {
+        await CheckAdminStatus();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CheckAdminStatus()
+    {
+        if (AuthState.IsAuthenticated)
+        {
+            try
+            {
+                var response = await ApiClient.GetMyAdminStatusAsync();
+                isAdmin = response.Success && response.Data?.IsAdmin == true;
+            }
+            catch
+            {
+                isAdmin = false;
+            }
+        }
+        else
+        {
+            isAdmin = false;
+        }
+    }
+
+    private void ToggleDropdown()
+    {
+        showProfileDropdown = !showProfileDropdown;
+    }
+
+    private void CloseDropdown()
+    {
+        showProfileDropdown = false;
+    }
+
+    private void CloseDropdownDelayed()
+    {
+        closeTimer?.Dispose();
+        closeTimer = new System.Timers.Timer(150);
+        closeTimer.Elapsed += (s, e) =>
+        {
+            closeTimer?.Dispose();
+            InvokeAsync(() =>
+            {
+                showProfileDropdown = false;
+                StateHasChanged();
+            });
+        };
+        closeTimer.AutoReset = false;
+        closeTimer.Start();
+    }
+
+    private async Task SignOut()
+    {
+        showProfileDropdown = false;
+        await AuthState.ClearAuthStateAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    public void Dispose()
+    {
+        AuthState.OnAuthStateChanged -= OnAuthStateChanged;
+        closeTimer?.Dispose();
+    }
+}
