@@ -208,4 +208,4 @@ Published/
 
 ## TODO: Update this section with your app-specific ignores
 # Add patterns for files specific to your application
-/Template.Api/appsettings.Development.json
+**/appsettings.Development.json
