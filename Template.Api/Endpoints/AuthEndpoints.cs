@@ -15,7 +15,7 @@ public static class AuthEndpoints
             [FromServices] IRegistrationService registrationService) =>
         {
             var (success, tempUserId, errorMessage) = await registrationService.StartRegistrationAsync(
-                request.Email, request.Username, request.Password, request.PreferredAuthMethod ?? "Both");
+                request.Email, request.Username, request.Password, request.PreferredAuthMethod ?? "Both").ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -30,7 +30,7 @@ public static class AuthEndpoints
             [FromServices] IRegistrationService registrationService) =>
         {
             var (success, userId, username, sessionId, errorMessage) = await registrationService.CompleteRegistrationAsync(
-                request.TempUserId, request.OtpCode);
+                request.TempUserId, request.OtpCode).ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -45,7 +45,7 @@ public static class AuthEndpoints
             [FromServices] IRegistrationService registrationService) =>
         {
             var (success, userId, errorMessage) = await registrationService.RegisterDirectAsync(
-                request.Email, request.Username, request.Password, request.PreferredAuthMethod ?? "Password");
+                request.Email, request.Username, request.Password, request.PreferredAuthMethod ?? "Password").ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -59,7 +59,7 @@ public static class AuthEndpoints
             [FromBody] SendOtpRequest request,
             [FromServices] IAuthenticationService authService) =>
         {
-            var (success, actualEmail, errorMessage) = await authService.SendOTPAsync(request.EmailOrUsername);
+            var (success, actualEmail, errorMessage) = await authService.SendOTPAsync(request.EmailOrUsername).ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -74,7 +74,7 @@ public static class AuthEndpoints
             [FromServices] IAuthenticationService authService) =>
         {
             var (success, userId, username, sessionId, errorMessage) = await authService.VerifyOTPAsync(
-                request.Email, request.OtpCode);
+                request.Email, request.OtpCode).ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -89,7 +89,7 @@ public static class AuthEndpoints
             [FromServices] IAuthenticationService authService) =>
         {
             var (success, userId, username, sessionId, errorMessage) = await authService.SignInWithPasswordAsync(
-                request.EmailOrUsername, request.Password);
+                request.EmailOrUsername, request.Password).ConfigureAwait(false);
 
             if (!success)
                 return Results.BadRequest(new { error = errorMessage });
@@ -104,7 +104,7 @@ public static class AuthEndpoints
             [FromServices] IAuthenticationService authService) =>
         {
             var (success, userId, username, sessionId, errorMessage) =
-                await authService.ValidateSessionAsync(request.SessionId);
+                await authService.ValidateSessionAsync(request.SessionId).ConfigureAwait(false);
 
             if (!success)
                 return Results.Unauthorized();
@@ -118,7 +118,7 @@ public static class AuthEndpoints
             [FromBody] SignOutRequest request,
             [FromServices] IAuthenticationService authService) =>
         {
-            await authService.SignOutAsync(request.SessionId);
+            await authService.SignOutAsync(request.SessionId).ConfigureAwait(false);
             return Results.Ok(new { message = "Signed out successfully" });
         })
         .WithName("SignOut");

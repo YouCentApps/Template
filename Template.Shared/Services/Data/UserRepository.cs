@@ -39,10 +39,10 @@ public class UserRepository : IUserRepository
         try
         {
             var normalizedEmail = email.ToLowerInvariant();
-            var safeEmail = normalizedEmail.Replace("'", "''");
+            var safeEmail = normalizedEmail.Replace("'", "''", StringComparison.Ordinal);
             var filter = $"Email eq '{safeEmail}'";
             
-            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter))
+            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter).ConfigureAwait(false))
             {
                 return MapToUser(entity);
             }
@@ -62,10 +62,10 @@ public class UserRepository : IUserRepository
         try
         {
             var normalizedUsername = username.ToLowerInvariant();
-            var safeUsername = normalizedUsername.Replace("'", "''");
+            var safeUsername = normalizedUsername.Replace("'", "''", StringComparison.Ordinal);
             var filter = $"NormalizedUsername eq '{safeUsername}'";
             
-            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter))
+            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter).ConfigureAwait(false))
             {
                 return MapToUser(entity);
             }
@@ -88,7 +88,7 @@ public class UserRepository : IUserRepository
             var partitionKey = userId.Length >= 6 ? userId.Substring(0, 6) : userId;
             var rowKey = userId.Length > 6 ? userId.Substring(6) : string.Empty;
             
-            var response = await tableClient.GetEntityAsync<TableEntity>(partitionKey, rowKey);
+            var response = await tableClient.GetEntityAsync<TableEntity>(partitionKey, rowKey).ConfigureAwait(false);
             return MapToUser(response.Value);
         }
         catch (RequestFailedException)
@@ -122,7 +122,7 @@ public class UserRepository : IUserRepository
                     : (DateTime?)null
             };
 
-            await tableClient.AddEntityAsync(entity);
+            await tableClient.AddEntityAsync(entity).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)
@@ -156,7 +156,7 @@ public class UserRepository : IUserRepository
                     : (DateTime?)null
             };
 
-            await tableClient.UpsertEntityAsync(entity, TableUpdateMode.Merge);
+            await tableClient.UpsertEntityAsync(entity, TableUpdateMode.Merge).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)
@@ -167,11 +167,11 @@ public class UserRepository : IUserRepository
 
     public async Task<bool> UpdateLastLoginAsync(string userId)
     {
-        var user = await GetUserByIdAsync(userId);
+        var user = await GetUserByIdAsync(userId).ConfigureAwait(false);
         if (user == null) return false;
 
         user.LastLoginDate = DateTime.UtcNow;
-        return await UpdateUserAsync(user);
+        return await UpdateUserAsync(user).ConfigureAwait(false);
     }
 
     public async Task<bool> DeleteUserAsync(string userId)
@@ -183,7 +183,7 @@ public class UserRepository : IUserRepository
             var partitionKey = userId.Substring(0, 6);
             var rowKey = userId.Substring(6);
             
-            await tableClient.DeleteEntityAsync(partitionKey, rowKey);
+            await tableClient.DeleteEntityAsync(partitionKey, rowKey).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)
@@ -199,7 +199,7 @@ public class UserRepository : IUserRepository
 
         try
         {
-            await foreach (var entity in tableClient.QueryAsync<TableEntity>())
+            await foreach (var entity in tableClient.QueryAsync<TableEntity>().ConfigureAwait(false))
             {
                 users.Add(MapToUser(entity));
             }

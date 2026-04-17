@@ -20,7 +20,7 @@ public static class AdminEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var admin = await adminRepo.GetAdminAsync(userId);
+            var admin = await adminRepo.GetAdminAsync(userId).ConfigureAwait(false);
             if (admin == null)
                 return Results.Ok(new { isAdmin = false, canManageAdmins = false });
 
@@ -33,7 +33,7 @@ public static class AdminEndpoints
         group.MapGet("/admins", async (
             [FromServices] IAdminRepository adminRepo) =>
         {
-            var admins = await adminRepo.GetAllAdminsAsync();
+            var admins = await adminRepo.GetAllAdminsAsync().ConfigureAwait(false);
             return Results.Ok(admins);
         })
         .RequireAdmin()
@@ -44,7 +44,7 @@ public static class AdminEndpoints
             string userId,
             [FromServices] IAdminRepository adminRepo) =>
         {
-            var admin = await adminRepo.GetAdminAsync(userId);
+            var admin = await adminRepo.GetAdminAsync(userId).ConfigureAwait(false);
             if (admin == null)
                 return Results.NotFound(new { error = "Admin not found" });
 
@@ -60,11 +60,11 @@ public static class AdminEndpoints
             [FromServices] IAdminRepository adminRepo,
             [FromServices] IUserRepository userRepo) =>
         {
-            var user = await userRepo.GetUserByIdAsync(request.UserId);
+            var user = await userRepo.GetUserByIdAsync(request.UserId).ConfigureAwait(false);
             if (user == null)
                 return Results.BadRequest(new { error = "User not found" });
 
-            var existingAdmin = await adminRepo.GetAdminAsync(request.UserId);
+            var existingAdmin = await adminRepo.GetAdminAsync(request.UserId).ConfigureAwait(false);
             if (existingAdmin != null)
                 return Results.BadRequest(new { error = "User is already an admin" });
 
@@ -78,7 +78,7 @@ public static class AdminEndpoints
                 CreatedBy = createdBy
             };
 
-            var success = await adminRepo.CreateAdminAsync(admin);
+            var success = await adminRepo.CreateAdminAsync(admin).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to create admin" });
 
@@ -94,7 +94,7 @@ public static class AdminEndpoints
             HttpContext httpContext,
             [FromServices] IAdminRepository adminRepo) =>
         {
-            var admin = await adminRepo.GetAdminAsync(userId);
+            var admin = await adminRepo.GetAdminAsync(userId).ConfigureAwait(false);
             if (admin == null)
                 return Results.NotFound(new { error = "Admin not found" });
 
@@ -103,7 +103,7 @@ public static class AdminEndpoints
             admin.LastModifiedDate = DateTime.UtcNow;
             admin.LastModifiedBy = httpContext.GetUserId();
 
-            var success = await adminRepo.UpdateAdminAsync(admin);
+            var success = await adminRepo.UpdateAdminAsync(admin).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to update admin" });
 
@@ -122,7 +122,7 @@ public static class AdminEndpoints
             if (currentUserId == userId)
                 return Results.BadRequest(new { error = "Cannot remove your own admin privileges" });
 
-            var success = await adminRepo.DeleteAdminAsync(userId);
+            var success = await adminRepo.DeleteAdminAsync(userId).ConfigureAwait(false);
             if (!success)
                 return Results.NotFound(new { error = "Admin not found" });
 
@@ -135,7 +135,7 @@ public static class AdminEndpoints
         group.MapGet("/users", async (
             [FromServices] IUserRepository userRepo) =>
         {
-            var users = await userRepo.GetAllUsersAsync();
+            var users = await userRepo.GetAllUsersAsync().ConfigureAwait(false);
             var result = users.Select(u => new
             {
                 u.UserId,
@@ -158,7 +158,7 @@ public static class AdminEndpoints
             if (string.IsNullOrWhiteSpace(q) || q.Length < 2)
                 return Results.BadRequest(new { error = "Search query must be at least 2 characters" });
 
-            var allUsers = await userRepo.GetAllUsersAsync();
+            var allUsers = await userRepo.GetAllUsersAsync().ConfigureAwait(false);
             var searchLower = q.ToLowerInvariant();
             var results = allUsers
                 .Where(u => (u.Username?.Contains(searchLower, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -184,11 +184,11 @@ public static class AdminEndpoints
             [FromServices] IUserRepository userRepo,
             [FromServices] IAdminRepository adminRepo) =>
         {
-            var user = await userRepo.GetUserByIdAsync(userId);
+            var user = await userRepo.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
-            var isAdmin = await adminRepo.IsActiveAdminAsync(userId);
+            var isAdmin = await adminRepo.IsActiveAdminAsync(userId).ConfigureAwait(false);
 
             return Results.Ok(new
             {
@@ -210,7 +210,7 @@ public static class AdminEndpoints
             [FromBody] AdminUpdateUserRequest request,
             [FromServices] IUserRepository userRepo) =>
         {
-            var user = await userRepo.GetUserByIdAsync(userId);
+            var user = await userRepo.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
@@ -219,7 +219,7 @@ public static class AdminEndpoints
             user.Email = request.Email.ToLowerInvariant();
             user.IsActive = request.IsActive;
 
-            var success = await userRepo.UpdateUserAsync(user);
+            var success = await userRepo.UpdateUserAsync(user).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to update user" });
 
@@ -233,7 +233,7 @@ public static class AdminEndpoints
             string userId,
             [FromServices] IUserRepository userRepo) =>
         {
-            var success = await userRepo.DeleteUserAsync(userId);
+            var success = await userRepo.DeleteUserAsync(userId).ConfigureAwait(false);
             if (!success)
                 return Results.NotFound(new { error = "User not found" });
 

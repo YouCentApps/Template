@@ -68,7 +68,7 @@ public static class MauiProgram
 		Task.Run(async () =>
 		{
 			var authState = app.Services.GetRequiredService<AuthStateService>();
-			await authState.InitializeAsync();
+			await authState.InitializeAsync().ConfigureAwait(false);
 		}).Wait();
 
 		return app;

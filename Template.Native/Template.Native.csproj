@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <TargetFramework />
-        <TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>
+        <!--<TargetFrameworks>net10.0-android;net10.0-ios;net10.0-maccatalyst</TargetFrameworks>-->
         <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net10.0-windows10.0.19041.0</TargetFrameworks>
 
         <!-- Note for MacCatalyst:
@@ -30,6 +30,11 @@
 
         <!-- To develop, package, and publish an app to the Microsoft Store, see: https://aka.ms/MauiTemplateUnpackaged -->
         <WindowsPackageType>None</WindowsPackageType>
+
+        <!-- CA1515: MAUI app types must be public for platform initialization -->
+        <!-- CA1031: Broad exception catches intentional in platform storage service -->
+        <!-- CA5392: P/Invoke DllImportSearchPath from auto-generated WindowsAppSDK package code -->
+        <NoWarn>$(NoWarn);CA1515;CA1031;CA5392</NoWarn>
 
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>

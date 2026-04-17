@@ -57,7 +57,7 @@ public static class OTPHelper
             byte[] randomBytes = new byte[4];
             rng.GetBytes(randomBytes);
             int value = Math.Abs(BitConverter.ToInt32(randomBytes, 0));
-            return (value % 1000000).ToString("D6");
+            return (value % 1000000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }

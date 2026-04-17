@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace Template.DbInit;
 
-class Program
+sealed class Program
 {
     private static IConfiguration? _configuration;
     private static string? _storageUri;
@@ -62,7 +62,7 @@ class Program
             Console.Write("WARNING: This will delete ALL existing Template tables. Are you sure? (yes/no): ");
             Console.ResetColor();
             var confirm = Console.ReadLine();
-            if (confirm?.ToLower() != "yes")
+            if (!string.Equals(confirm, "yes", StringComparison.OrdinalIgnoreCase))
             {
                 Console.WriteLine("Operation cancelled.");
                 return;
@@ -73,17 +73,17 @@ class Program
         {
             if (dropExisting)
             {
-                await DropTablesAsync();
+                await DropTablesAsync().ConfigureAwait(false);
             }
 
             if (createTables)
             {
-                await CreateTablesAsync();
+                await CreateTablesAsync().ConfigureAwait(false);
             }
 
             if (addSampleData)
             {
-                await AddSampleDataAsync();
+                await AddSampleDataAsync().ConfigureAwait(false);
             }
 
             Console.ForegroundColor = ConsoleColor.Green;
@@ -92,7 +92,9 @@ class Program
             Console.WriteLine("===========================================");
             Console.ResetColor();
         }
+        #pragma warning disable CA1031
         catch (Exception ex)
+#pragma warning restore CA1031
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"\nERROR: {ex.Message}");
@@ -110,7 +112,7 @@ class Program
             try
             {
                 var client = CreateTableClient(tableName);
-                await client.DeleteAsync();
+                await client.DeleteAsync().ConfigureAwait(false);
                 Console.WriteLine($"  Dropped: {tableName}");
             }
             catch (RequestFailedException ex) when (ex.Status == 404)
@@ -121,7 +123,7 @@ class Program
 
         // Wait for Azure to finish deleting
         Console.WriteLine("  Waiting for table deletion to complete...");
-        await Task.Delay(5000);
+        await Task.Delay(5000).ConfigureAwait(false);
     }
 
     static async Task CreateTablesAsync()
@@ -131,7 +133,7 @@ class Program
         foreach (var tableName in TableNames)
         {
             var client = CreateTableClient(tableName);
-            await client.CreateIfNotExistsAsync();
+            await client.CreateIfNotExistsAsync().ConfigureAwait(false);
             Console.WriteLine($"  Created: {tableName}");
         }
     }
@@ -145,7 +147,7 @@ class Program
         var adminUsername = _configuration["AdminUser:Username"] ?? "Admin";
         var adminPassword = _configuration["AdminUser:Password"] ?? "Admin123!";
 
-        var adminUserId = await CreateUserAsync(adminEmail, adminUsername, adminPassword, "Both");
+        var adminUserId = await CreateUserAsync(adminEmail, adminUsername, adminPassword, "Both").ConfigureAwait(false);
         Console.WriteLine($"  Created admin user: {adminUsername} ({adminEmail})");
 
         // Grant admin privileges
@@ -158,7 +160,7 @@ class Program
             ["CreatedDate"] = DateTime.UtcNow,
             ["CreatedBy"] = "DbInit"
         };
-        await adminClient.UpsertEntityAsync(adminEntity);
+        await adminClient.UpsertEntityAsync(adminEntity).ConfigureAwait(false);
         Console.WriteLine($"  Granted super admin privileges to: {adminUsername}");
 
         // Create sample users
@@ -171,7 +173,7 @@ class Program
 
         foreach (var (email, username, password, authMethod) in sampleUsers)
         {
-            await CreateUserAsync(email, username, password, authMethod);
+            await CreateUserAsync(email, username, password, authMethod).ConfigureAwait(false);
             Console.WriteLine($"  Created user: {username} ({email}) - Auth: {authMethod}");
         }
 
@@ -209,7 +211,7 @@ class Program
             ["CreatedDate"] = DateTime.UtcNow
         };
 
-        await userClient.UpsertEntityAsync(userEntity);
+        await userClient.UpsertEntityAsync(userEntity).ConfigureAwait(false);
         return userId;
     }
 

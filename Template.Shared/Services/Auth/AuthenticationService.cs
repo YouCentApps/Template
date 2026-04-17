@@ -42,13 +42,13 @@ public class AuthenticationService : IAuthenticationService
         // Find user by email or username
         User? user = null;
 
-        if (emailOrUsername.Contains("@"))
+        if (emailOrUsername.Contains('@', StringComparison.Ordinal))
         {
-            user = await _userRepository.GetUserByEmailAsync(emailOrUsername);
+            user = await _userRepository.GetUserByEmailAsync(emailOrUsername).ConfigureAwait(false);
         }
         else
         {
-            user = await _userRepository.GetUserByUsernameAsync(emailOrUsername);
+            user = await _userRepository.GetUserByUsernameAsync(emailOrUsername).ConfigureAwait(false);
         }
 
         if (user == null)
@@ -64,7 +64,7 @@ public class AuthenticationService : IAuthenticationService
         // Generate and store OTP
         var otpCode = OTPHelper.GenerateOTP();
         var otpClient = _tableClientFactory.GetTableClient(TableNames.OTPCodes);
-        await otpClient.CreateIfNotExistsAsync();
+        await otpClient.CreateIfNotExistsAsync().ConfigureAwait(false);
 
         var otpEntity = new TableEntity("OTP", Guid.NewGuid().ToString())
         {
@@ -78,7 +78,7 @@ public class AuthenticationService : IAuthenticationService
 
         try
         {
-            await otpClient.AddEntityAsync(otpEntity);
+            await otpClient.AddEntityAsync(otpEntity).ConfigureAwait(false);
         }
         catch (RequestFailedException)
         {
@@ -99,11 +99,11 @@ public class AuthenticationService : IAuthenticationService
         // Find valid OTP
         var normalizedEmail = InputValidator.NormalizeEmail(email);
         var cutoffTime = DateTime.UtcNow;
-        var safeEmail = normalizedEmail.Replace("'", "''");
+        var safeEmail = normalizedEmail.Replace("'", "''", StringComparison.Ordinal);
         var filter = $"PartitionKey eq 'OTP' and Email eq '{safeEmail}' and IsUsed eq false and ExpiryTime gt datetime'{cutoffTime:yyyy-MM-ddTHH:mm:ss.fffffffZ}'";
 
         TableEntity? validOtp = null;
-        await foreach (var entity in otpClient.QueryAsync<TableEntity>(filter: filter))
+        await foreach (var entity in otpClient.QueryAsync<TableEntity>(filter: filter).ConfigureAwait(false))
         {
             if (entity.GetString("Code") == otpCode)
             {
@@ -119,7 +119,7 @@ public class AuthenticationService : IAuthenticationService
 
         // Get user
         var userId = validOtp.GetString("UserId") ?? string.Empty;
-        var user = await _userRepository.GetUserByIdAsync(userId);
+        var user = await _userRepository.GetUserByIdAsync(userId).ConfigureAwait(false);
 
         if (user == null || !user.IsActive)
         {
@@ -128,13 +128,13 @@ public class AuthenticationService : IAuthenticationService
 
         // Mark OTP as used
         validOtp["IsUsed"] = true;
-        await otpClient.UpdateEntityAsync(validOtp, ETag.All, TableUpdateMode.Merge);
+        await otpClient.UpdateEntityAsync(validOtp, ETag.All, TableUpdateMode.Merge).ConfigureAwait(false);
 
         // Update last login
-        await _userRepository.UpdateLastLoginAsync(userId);
+        await _userRepository.UpdateLastLoginAsync(userId).ConfigureAwait(false);
 
         // Create session
-        var sessionId = await CreateSessionAsync(userId, user.Email, user.Username);
+        var sessionId = await CreateSessionAsync(userId, user.Email, user.Username).ConfigureAwait(false);
 
         return (true, userId, user.Username, sessionId, string.Empty);
     }
@@ -145,13 +145,13 @@ public class AuthenticationService : IAuthenticationService
         // Find user
         User? user = null;
 
-        if (emailOrUsername.Contains("@"))
+        if (emailOrUsername.Contains('@', StringComparison.Ordinal))
         {
-            user = await _userRepository.GetUserByEmailAsync(emailOrUsername);
+            user = await _userRepository.GetUserByEmailAsync(emailOrUsername).ConfigureAwait(false);
         }
         else
         {
-            user = await _userRepository.GetUserByUsernameAsync(emailOrUsername);
+            user = await _userRepository.GetUserByUsernameAsync(emailOrUsername).ConfigureAwait(false);
         }
 
         if (user == null)
@@ -171,10 +171,10 @@ public class AuthenticationService : IAuthenticationService
         }
 
         // Update last login
-        await _userRepository.UpdateLastLoginAsync(user.UserId);
+        await _userRepository.UpdateLastLoginAsync(user.UserId).ConfigureAwait(false);
 
         // Create session
-        var sessionId = await CreateSessionAsync(user.UserId, user.Email, user.Username);
+        var sessionId = await CreateSessionAsync(user.UserId, user.Email, user.Username).ConfigureAwait(false);
 
         return (true, user.UserId, user.Username, sessionId, string.Empty);
     }
@@ -186,7 +186,7 @@ public class AuthenticationService : IAuthenticationService
 
         try
         {
-            var response = await sessionClient.GetEntityAsync<TableEntity>("Session", sessionId);
+            var response = await sessionClient.GetEntityAsync<TableEntity>("Session", sessionId).ConfigureAwait(false);
             var session = response.Value;
 
             var isActive = session.GetBoolean("IsActive") ?? false;
@@ -214,10 +214,10 @@ public class AuthenticationService : IAuthenticationService
 
         try
         {
-            var response = await sessionClient.GetEntityAsync<TableEntity>("Session", sessionId);
+            var response = await sessionClient.GetEntityAsync<TableEntity>("Session", sessionId).ConfigureAwait(false);
             var session = response.Value;
             session["IsActive"] = false;
-            await sessionClient.UpdateEntityAsync(session, ETag.All, TableUpdateMode.Merge);
+            await sessionClient.UpdateEntityAsync(session, ETag.All, TableUpdateMode.Merge).ConfigureAwait(false);
         }
         catch (RequestFailedException)
         {
@@ -229,7 +229,7 @@ public class AuthenticationService : IAuthenticationService
     {
         var sessionId = Guid.NewGuid().ToString();
         var sessionClient = _tableClientFactory.GetTableClient(TableNames.AuthSessions);
-        await sessionClient.CreateIfNotExistsAsync();
+        await sessionClient.CreateIfNotExistsAsync().ConfigureAwait(false);
 
         var sessionEntity = new TableEntity("Session", sessionId)
         {
@@ -241,7 +241,7 @@ public class AuthenticationService : IAuthenticationService
             ["IsActive"] = true
         };
 
-        await sessionClient.AddEntityAsync(sessionEntity);
+        await sessionClient.AddEntityAsync(sessionEntity).ConfigureAwait(false);
         return sessionId;
     }
 }

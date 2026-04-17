@@ -38,7 +38,7 @@ public class AdminRepository : IAdminRepository
 
         try
         {
-            var response = await tableClient.GetEntityAsync<TableEntity>("Admin", userId);
+            var response = await tableClient.GetEntityAsync<TableEntity>("Admin", userId).ConfigureAwait(false);
             return MapToAdmin(response.Value);
         }
         catch (RequestFailedException)
@@ -49,19 +49,19 @@ public class AdminRepository : IAdminRepository
 
     public async Task<bool> IsAdminAsync(string userId)
     {
-        var admin = await GetAdminAsync(userId);
+        var admin = await GetAdminAsync(userId).ConfigureAwait(false);
         return admin != null;
     }
 
     public async Task<bool> IsActiveAdminAsync(string userId)
     {
-        var admin = await GetAdminAsync(userId);
+        var admin = await GetAdminAsync(userId).ConfigureAwait(false);
         return admin != null && admin.IsActive;
     }
 
     public async Task<bool> CanManageAdminsAsync(string userId)
     {
-        var admin = await GetAdminAsync(userId);
+        var admin = await GetAdminAsync(userId).ConfigureAwait(false);
         return admin != null && admin.IsActive && admin.CanManageAdmins;
     }
 
@@ -73,7 +73,7 @@ public class AdminRepository : IAdminRepository
         try
         {
             var filter = "PartitionKey eq 'Admin'";
-            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter))
+            await foreach (var entity in tableClient.QueryAsync<TableEntity>(filter: filter).ConfigureAwait(false))
             {
                 admins.Add(MapToAdmin(entity));
             }
@@ -105,7 +105,7 @@ public class AdminRepository : IAdminRepository
                 ["LastModifiedBy"] = admin.LastModifiedBy
             };
 
-            await tableClient.AddEntityAsync(entity);
+            await tableClient.AddEntityAsync(entity).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)
@@ -133,7 +133,7 @@ public class AdminRepository : IAdminRepository
                 ["LastModifiedBy"] = admin.LastModifiedBy
             };
 
-            await tableClient.UpsertEntityAsync(entity, TableUpdateMode.Merge);
+            await tableClient.UpsertEntityAsync(entity, TableUpdateMode.Merge).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)
@@ -148,7 +148,7 @@ public class AdminRepository : IAdminRepository
 
         try
         {
-            await tableClient.DeleteEntityAsync("Admin", userId);
+            await tableClient.DeleteEntityAsync("Admin", userId).ConfigureAwait(false);
             return true;
         }
         catch (RequestFailedException)

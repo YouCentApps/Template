@@ -22,11 +22,11 @@ public static class ProfileEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var user = await userRepository.GetUserByIdAsync(userId);
+            var user = await userRepository.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
-            var isAdmin = await adminRepository.IsActiveAdminAsync(userId);
+            var isAdmin = await adminRepository.IsActiveAdminAsync(userId).ConfigureAwait(false);
 
             return Results.Ok(new
             {
@@ -54,7 +54,7 @@ public static class ProfileEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var user = await userRepository.GetUserByIdAsync(userId);
+            var user = await userRepository.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
@@ -65,13 +65,13 @@ public static class ProfileEndpoints
                 request.NewUsername.Length > Policy.MaximumUsernameLength)
                 return Results.BadRequest(new { error = $"Username must be {Policy.MinimumUsernameLength}-{Policy.MaximumUsernameLength} characters" });
 
-            var existingUser = await userRepository.GetUserByUsernameAsync(request.NewUsername);
+            var existingUser = await userRepository.GetUserByUsernameAsync(request.NewUsername).ConfigureAwait(false);
             if (existingUser != null && existingUser.UserId != userId)
                 return Results.BadRequest(new { error = "Username already taken" });
 
             user.Username = request.NewUsername.Trim();
             user.NormalizedUsername = InputValidator.NormalizeUsername(request.NewUsername);
-            var success = await userRepository.UpdateUserAsync(user);
+            var success = await userRepository.UpdateUserAsync(user).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to update username" });
 
@@ -90,7 +90,7 @@ public static class ProfileEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var user = await userRepository.GetUserByIdAsync(userId);
+            var user = await userRepository.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
@@ -114,7 +114,7 @@ public static class ProfileEndpoints
             user.PasswordHash = hash;
             user.PasswordSalt = salt;
 
-            var success = await userRepository.UpdateUserAsync(user);
+            var success = await userRepository.UpdateUserAsync(user).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to update password" });
 
@@ -133,7 +133,7 @@ public static class ProfileEndpoints
             if (string.IsNullOrEmpty(userId))
                 return Results.Unauthorized();
 
-            var user = await userRepository.GetUserByIdAsync(userId);
+            var user = await userRepository.GetUserByIdAsync(userId).ConfigureAwait(false);
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
@@ -148,7 +148,7 @@ public static class ProfileEndpoints
                 return Results.BadRequest(new { error = "Cannot use email authentication without an email set." });
 
             user.PreferredAuthMethod = method;
-            var success = await userRepository.UpdateUserAsync(user);
+            var success = await userRepository.UpdateUserAsync(user).ConfigureAwait(false);
             if (!success)
                 return Results.BadRequest(new { error = "Failed to update auth method" });
 

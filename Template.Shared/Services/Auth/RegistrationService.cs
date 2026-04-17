@@ -51,12 +51,12 @@ public class RegistrationService : IRegistrationService
         // Check if user already exists
         if (!string.IsNullOrWhiteSpace(email))
         {
-            var existingUserByEmail = await _userRepository.GetUserByEmailAsync(email);
+            var existingUserByEmail = await _userRepository.GetUserByEmailAsync(email).ConfigureAwait(false);
             if (existingUserByEmail != null)
                 return (false, string.Empty, "Email already registered");
         }
 
-        var existingUserByUsername = await _userRepository.GetUserByUsernameAsync(username);
+        var existingUserByUsername = await _userRepository.GetUserByUsernameAsync(username).ConfigureAwait(false);
         if (existingUserByUsername != null)
             return (false, string.Empty, "Username already taken");
 
@@ -67,7 +67,7 @@ public class RegistrationService : IRegistrationService
 
         // Store pending registration
         var pendingRegClient = _tableClientFactory.GetTableClient("TemplatePendingReg");
-        await pendingRegClient.CreateIfNotExistsAsync();
+        await pendingRegClient.CreateIfNotExistsAsync().ConfigureAwait(false);
 
         var pendingEntity = new TableEntity("PendingReg", tempUserId)
         {
@@ -82,7 +82,7 @@ public class RegistrationService : IRegistrationService
 
         try
         {
-            await pendingRegClient.AddEntityAsync(pendingEntity);
+            await pendingRegClient.AddEntityAsync(pendingEntity).ConfigureAwait(false);
         }
         catch (RequestFailedException)
         {
@@ -92,7 +92,7 @@ public class RegistrationService : IRegistrationService
         // Generate and store OTP
         var otpCode = OTPHelper.GenerateOTP();
         var otpClient = _tableClientFactory.GetTableClient(TableNames.OTPCodes);
-        await otpClient.CreateIfNotExistsAsync();
+        await otpClient.CreateIfNotExistsAsync().ConfigureAwait(false);
 
         var otpEntity = new TableEntity("OTP", Guid.NewGuid().ToString())
         {
@@ -106,7 +106,7 @@ public class RegistrationService : IRegistrationService
 
         try
         {
-            await otpClient.AddEntityAsync(otpEntity);
+            await otpClient.AddEntityAsync(otpEntity).ConfigureAwait(false);
         }
         catch (RequestFailedException)
         {
@@ -127,11 +127,11 @@ public class RegistrationService : IRegistrationService
 
         // Verify OTP
         var cutoffTime = DateTime.UtcNow;
-        var safeTempUserId = tempUserId.Replace("'", "''");
+        var safeTempUserId = tempUserId.Replace("'", "''", StringComparison.Ordinal);
         var filter = $"PartitionKey eq 'OTP' and UserId eq '{safeTempUserId}' and IsUsed eq false and ExpiryTime gt datetime'{cutoffTime:yyyy-MM-ddTHH:mm:ss.fffffffZ}' and IsRegistration eq true";
 
         TableEntity? validOtp = null;
-        await foreach (var entity in otpClient.QueryAsync<TableEntity>(filter: filter))
+        await foreach (var entity in otpClient.QueryAsync<TableEntity>(filter: filter).ConfigureAwait(false))
         {
             if (entity.GetString("Code") == otpCode)
             {
@@ -149,7 +149,7 @@ public class RegistrationService : IRegistrationService
         TableEntity pending;
         try
         {
-            var pendingResponse = await pendingRegClient.GetEntityAsync<TableEntity>("PendingReg", tempUserId);
+            var pendingResponse = await pendingRegClient.GetEntityAsync<TableEntity>("PendingReg", tempUserId).ConfigureAwait(false);
             pending = pendingResponse.Value;
         }
         catch (RequestFailedException)
@@ -173,7 +173,7 @@ public class RegistrationService : IRegistrationService
             LastLoginDate = DateTime.UtcNow
         };
 
-        var createSuccess = await _userRepository.CreateUserAsync(user);
+        var createSuccess = await _userRepository.CreateUserAsync(user).ConfigureAwait(false);
         if (!createSuccess)
         {
             return (false, string.Empty, string.Empty, string.Empty, "Failed to create user");
@@ -181,19 +181,21 @@ public class RegistrationService : IRegistrationService
 
         // Mark OTP as used
         validOtp["IsUsed"] = true;
-        await otpClient.UpdateEntityAsync(validOtp, ETag.All, TableUpdateMode.Merge);
+        await otpClient.UpdateEntityAsync(validOtp, ETag.All, TableUpdateMode.Merge).ConfigureAwait(false);
 
         // Clean up pending registration
         try
         {
-            await pendingRegClient.DeleteEntityAsync("PendingReg", tempUserId);
+            await pendingRegClient.DeleteEntityAsync("PendingReg", tempUserId).ConfigureAwait(false);
         }
-        catch { /* Ignore cleanup errors */ }
+        #pragma warning disable CA1031
+                catch { /* Ignore cleanup errors */ }
+        #pragma warning restore CA1031
 
         // Create session
         var sessionId = Guid.NewGuid().ToString();
         var sessionClient = _tableClientFactory.GetTableClient(TableNames.AuthSessions);
-        await sessionClient.CreateIfNotExistsAsync();
+        await sessionClient.CreateIfNotExistsAsync().ConfigureAwait(false);
 
         var sessionEntity = new TableEntity("Session", sessionId)
         {
@@ -205,7 +207,7 @@ public class RegistrationService : IRegistrationService
             ["IsActive"] = true
         };
 
-        await sessionClient.AddEntityAsync(sessionEntity);
+        await sessionClient.AddEntityAsync(sessionEntity).ConfigureAwait(false);
 
         return (true, userId, user.Username, sessionId, string.Empty);
     }
@@ -223,12 +225,12 @@ public class RegistrationService : IRegistrationService
         // Check existing users
         if (!string.IsNullOrWhiteSpace(email))
         {
-            var existingByEmail = await _userRepository.GetUserByEmailAsync(email);
+            var existingByEmail = await _userRepository.GetUserByEmailAsync(email).ConfigureAwait(false);
             if (existingByEmail != null)
                 return (false, string.Empty, "Email already registered");
         }
 
-        var existingByUsername = await _userRepository.GetUserByUsernameAsync(username);
+        var existingByUsername = await _userRepository.GetUserByUsernameAsync(username).ConfigureAwait(false);
         if (existingByUsername != null)
             return (false, string.Empty, "Username already taken");
 
@@ -250,7 +252,7 @@ public class RegistrationService : IRegistrationService
             CreatedDate = DateTime.UtcNow
         };
 
-        var success = await _userRepository.CreateUserAsync(user);
+        var success = await _userRepository.CreateUserAsync(user).ConfigureAwait(false);
         if (!success)
             return (false, string.Empty, "Failed to create user");
 

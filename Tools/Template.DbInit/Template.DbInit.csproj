@@ -3,6 +3,10 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <UserSecretsId>template-dbinit-secrets</UserSecretsId>
+    <!-- CA1303: Console string localization not needed for a dev CLI tool -->
+    <!-- CA1308: ToLowerInvariant is intentional for email/username normalization -->
+    <!-- CA1031: Top-level error handler catch-all is intentional -->
+    <NoWarn>$(NoWarn);CA1303;CA1308;CA1031</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

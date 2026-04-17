@@ -37,7 +37,7 @@ public class EmailService : IEmailService
                 EnableSsl = true
             };
 
-            var message = new MailMessage
+            using var message = new MailMessage
             {
                 From = new MailAddress(_senderEmail, _senderName),
                 Subject = "Your Verification Code",
@@ -46,7 +46,7 @@ public class EmailService : IEmailService
             };
             message.To.Add(toEmail);
 
-            await client.SendMailAsync(message);
+            await client.SendMailAsync(message).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

@@ -4,7 +4,7 @@ public class AuthStateService
 {
     private const string StorageKey = "template_session";
     private readonly IStorageService? _storageService;
-    private bool _isHandlingExpiration = false;
+    private bool _isHandlingExpiration;
 
     private string? _userId;
     private string? _username;
@@ -28,7 +28,7 @@ public class AuthStateService
         if (_storageService == null)
             return;
 
-        var session = await _storageService.GetItemAsync<SessionData>(StorageKey);
+        var session = await _storageService.GetItemAsync<SessionData>(StorageKey).ConfigureAwait(false);
         if (session != null && session.ExpiryDate > DateTime.UtcNow)
         {
             _userId = session.UserId;
@@ -53,7 +53,7 @@ public class AuthStateService
                 SessionId = sessionId,
                 ExpiryDate = DateTime.UtcNow.AddDays(14)
             };
-            await _storageService.SetItemAsync(StorageKey, session);
+            await _storageService.SetItemAsync(StorageKey, session).ConfigureAwait(false);
         }
 
         NotifyStateChanged();
@@ -67,7 +67,7 @@ public class AuthStateService
 
         if (_storageService != null)
         {
-            await _storageService.RemoveItemAsync(StorageKey);
+            await _storageService.RemoveItemAsync(StorageKey).ConfigureAwait(false);
         }
 
         NotifyStateChanged();
@@ -82,11 +82,11 @@ public class AuthStateService
 
         try
         {
-            await ClearAuthStateAsync();
+            await ClearAuthStateAsync().ConfigureAwait(false);
 
             if (OnSessionExpired != null)
             {
-                await OnSessionExpired.Invoke();
+                await OnSessionExpired.Invoke().ConfigureAwait(false);
             }
         }
         finally
