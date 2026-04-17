@@ -165,10 +165,6 @@ $RECYCLE.BIN/
 # JetBrains Rider
 *.sln.iml
 
-# User-specific files (Unity)
-*.unityproj
-*.userprefs
-
 # Build Folders (temp)
 [Oo]bj/
 [Bb]in/
@@ -204,5 +200,5 @@ Published/
 *.crt
 *.key
 
-## TODO: Update this section with your app-specific ignores
-# Add patterns for files specific to your application
+## Prevent committing development appsettings files with sensitive data
+**/appsettings.Development.json
