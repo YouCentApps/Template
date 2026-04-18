@@ -3,12 +3,12 @@ using System.Net.Mail;
 
 namespace Template.Api.Services;
 
-public interface IEmailService
+internal interface IEmailService
 {
     Task SendVerificationEmailAsync(string toEmail, string code);
 }
 
-public class EmailService(string smtpServer, int smtpPort, string username, string password, string senderEmail, string senderName) : IEmailService
+internal sealed class EmailService(string smtpServer, int smtpPort, string username, string password, string senderEmail, string senderName) : IEmailService
 {
     private readonly string _smtpServer = smtpServer;
     private readonly int _smtpPort = smtpPort;

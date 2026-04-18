@@ -2,7 +2,7 @@ using Template.Shared.Services.Auth;
 
 namespace Template.Api.Endpoints;
 
-public static class AuthEndpoints
+internal static class AuthEndpoints
 {
     public static void MapAuthEndpoints(this WebApplication app)
     {
@@ -125,10 +125,12 @@ public static class AuthEndpoints
 }
 
 // Request DTOs
-public record RegisterRequest(string Email, string Username, string Password, string? PreferredAuthMethod);
-public record VerifyRegistrationRequest(string TempUserId, string OtpCode);
-public record SendOtpRequest(string EmailOrUsername);
-public record VerifyOtpRequest(string Email, string OtpCode);
-public record SignInRequest(string EmailOrUsername, string Password);
-public record ValidateSessionRequest(string SessionId);
-public record SignOutRequest(string SessionId);
+#pragma warning disable CA1812
+internal sealed record RegisterRequest(string Email, string Username, string Password, string? PreferredAuthMethod);
+internal sealed record VerifyRegistrationRequest(string TempUserId, string OtpCode);
+internal sealed record SendOtpRequest(string EmailOrUsername);
+internal sealed record VerifyOtpRequest(string Email, string OtpCode);
+internal sealed record SignInRequest(string EmailOrUsername, string Password);
+internal sealed record ValidateSessionRequest(string SessionId);
+internal sealed record SignOutRequest(string SessionId);
+#pragma warning restore CA1812

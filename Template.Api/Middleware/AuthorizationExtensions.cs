@@ -3,7 +3,7 @@ using Template.Shared.Services.Data;
 
 namespace Template.Api.Middleware;
 
-public static class AuthorizationExtensions
+internal static class AuthorizationExtensions
 {
     public static async Task<IResult?> ValidateSession(
         HttpContext context,
@@ -103,7 +103,7 @@ public static class AuthorizationExtensions
         => context?.Items["SessionId"] as string;
 }
 
-public static class EndpointAuthorizationExtensions
+internal static class EndpointAuthorizationExtensions
 {
     public static RouteHandlerBuilder RequireAuth(this RouteHandlerBuilder builder)
     {

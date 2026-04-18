@@ -2,7 +2,7 @@ using Template.Shared.Services.Data;
 
 namespace Template.Api.Endpoints;
 
-public static class AdminEndpoints
+internal static class AdminEndpoints
 {
     public static void MapAdminEndpoints(this WebApplication app)
     {
@@ -242,6 +242,8 @@ public static class AdminEndpoints
 }
 
 // Request DTOs
-public record CreateAdminRequest(string UserId, bool IsActive, bool CanManageAdmins);
-public record UpdateAdminRequest(bool IsActive, bool CanManageAdmins);
-public record AdminUpdateUserRequest(string Username, string Email, bool IsActive);
+#pragma warning disable CA1812
+internal sealed record CreateAdminRequest(string UserId, bool IsActive, bool CanManageAdmins);
+internal sealed record UpdateAdminRequest(bool IsActive, bool CanManageAdmins);
+internal sealed record AdminUpdateUserRequest(string Username, string Email, bool IsActive);
+#pragma warning restore CA1812

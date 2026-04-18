@@ -3,7 +3,7 @@ using Template.Shared.Services.Data;
 
 namespace Template.Api.Endpoints;
 
-public static class ProfileEndpoints
+internal static class ProfileEndpoints
 {
     public static void MapProfileEndpoints(this WebApplication app)
     {
@@ -157,6 +157,8 @@ public static class ProfileEndpoints
 }
 
 // Request DTOs
-public record UpdateUsernameRequest(string NewUsername);
-public record UpdatePasswordRequest(string? OldPassword, string NewPassword);
-public record UpdateAuthMethodRequest(string NewAuthMethod);
+#pragma warning disable CA1812
+internal sealed record UpdateUsernameRequest(string NewUsername);
+internal sealed record UpdatePasswordRequest(string? OldPassword, string NewPassword);
+internal sealed record UpdateAuthMethodRequest(string NewAuthMethod);
+#pragma warning restore CA1812
