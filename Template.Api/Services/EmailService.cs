@@ -38,9 +38,17 @@ internal sealed class EmailService(string smtpServer, int smtpPort, string usern
 
             await client.SendMailAsync(message).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        catch (SmtpException ex)
         {
             Console.WriteLine($"Failed to send email to {toEmail}: {ex.Message}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.WriteLine($"Failed to send email to {toEmail}: {ex.Message}");
+        }
+        catch (ArgumentException ex)
+        {
+            Console.WriteLine($"Invalid email address '{toEmail}': {ex.Message}");
         }
     }
 }

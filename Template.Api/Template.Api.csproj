@@ -2,10 +2,9 @@
 
   <PropertyGroup>
     <UserSecretsId>template-api-secrets</UserSecretsId>
-    <!-- CA1031: Broad exception catches intentional in email/service wrappers -->
     <!-- CA1303: Console output localization not needed for a dev/startup API project -->
     <!-- CA1308: ToLowerInvariant is intentional for email/username normalization -->
-    <NoWarn>CA1031;CA1303;CA1308</NoWarn>
+    <NoWarn>CA1303;CA1308</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
