@@ -17,21 +17,14 @@ public interface IRegistrationService
 /// <summary>
 /// Service for handling user registration with OTP verification
 /// </summary>
-public class RegistrationService : IRegistrationService
+public class RegistrationService(
+    ITableClientFactory tableClientFactory,
+    IUserRepository userRepository,
+    Action<string, string>? sendEmailCallback = null) : IRegistrationService
 {
-    private readonly ITableClientFactory _tableClientFactory;
-    private readonly IUserRepository _userRepository;
-    private readonly Action<string, string>? _sendEmailCallback;
-
-    public RegistrationService(
-        ITableClientFactory tableClientFactory,
-        IUserRepository userRepository,
-        Action<string, string>? sendEmailCallback = null)
-    {
-        _tableClientFactory = tableClientFactory;
-        _userRepository = userRepository;
-        _sendEmailCallback = sendEmailCallback;
-    }
+    private readonly ITableClientFactory _tableClientFactory = tableClientFactory;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly Action<string, string>? _sendEmailCallback = sendEmailCallback;
 
     public async Task<(bool Success, string TempUserId, string ErrorMessage)> StartRegistrationAsync(
         string email, string username, string password, string preferredAuthMethod)

@@ -10,14 +10,9 @@ public interface IStorageService
     Task RemoveItemAsync(string key);
 }
 
-public class BrowserStorageService : IStorageService
+public class BrowserStorageService(IJSRuntime jsRuntime) : IStorageService
 {
-    private readonly IJSRuntime _jsRuntime;
-
-    public BrowserStorageService(IJSRuntime jsRuntime)
-    {
-        _jsRuntime = jsRuntime;
-    }
+    private readonly IJSRuntime _jsRuntime = jsRuntime;
 
     public async Task<T?> GetItemAsync<T>(string key)
     {

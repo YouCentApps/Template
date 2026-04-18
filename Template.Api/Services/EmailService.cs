@@ -8,24 +8,14 @@ public interface IEmailService
     Task SendVerificationEmailAsync(string toEmail, string code);
 }
 
-public class EmailService : IEmailService
+public class EmailService(string smtpServer, int smtpPort, string username, string password, string senderEmail, string senderName) : IEmailService
 {
-    private readonly string _smtpServer;
-    private readonly int _smtpPort;
-    private readonly string _username;
-    private readonly string _password;
-    private readonly string _senderEmail;
-    private readonly string _senderName;
-
-    public EmailService(string smtpServer, int smtpPort, string username, string password, string senderEmail, string senderName)
-    {
-        _smtpServer = smtpServer;
-        _smtpPort = smtpPort;
-        _username = username;
-        _password = password;
-        _senderEmail = senderEmail;
-        _senderName = senderName;
-    }
+    private readonly string _smtpServer = smtpServer;
+    private readonly int _smtpPort = smtpPort;
+    private readonly string _username = username;
+    private readonly string _password = password;
+    private readonly string _senderEmail = senderEmail;
+    private readonly string _senderName = senderName;
 
     public async Task SendVerificationEmailAsync(string toEmail, string code)
     {

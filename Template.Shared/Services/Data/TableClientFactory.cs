@@ -13,18 +13,11 @@ public interface ITableClientFactory
 /// <summary>
 /// Factory implementation for creating Azure Table Storage clients
 /// </summary>
-public class TableClientFactory : ITableClientFactory
+public class TableClientFactory(string storageUri, string accountName, string accountKey) : ITableClientFactory
 {
-    private readonly string _storageUri;
-    private readonly string _accountName;
-    private readonly string _accountKey;
-
-    public TableClientFactory(string storageUri, string accountName, string accountKey)
-    {
-        _storageUri = storageUri ?? throw new ArgumentNullException(nameof(storageUri));
-        _accountName = accountName ?? throw new ArgumentNullException(nameof(accountName));
-        _accountKey = accountKey ?? throw new ArgumentNullException(nameof(accountKey));
-    }
+    private readonly string _storageUri = storageUri ?? throw new ArgumentNullException(nameof(storageUri));
+    private readonly string _accountName = accountName ?? throw new ArgumentNullException(nameof(accountName));
+    private readonly string _accountKey = accountKey ?? throw new ArgumentNullException(nameof(accountKey));
 
     public TableClient GetTableClient(string tableName)
     {

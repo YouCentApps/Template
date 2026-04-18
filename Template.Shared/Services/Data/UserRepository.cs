@@ -21,14 +21,9 @@ public interface IUserRepository
 /// <summary>
 /// Repository implementation for User operations with Azure Table Storage
 /// </summary>
-public class UserRepository : IUserRepository
+public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepository
 {
-    private readonly ITableClientFactory _tableClientFactory;
-
-    public UserRepository(ITableClientFactory tableClientFactory)
-    {
-        _tableClientFactory = tableClientFactory;
-    }
+    private readonly ITableClientFactory _tableClientFactory = tableClientFactory;
 
     public async Task<User?> GetUserByEmailAsync(string email)
     {

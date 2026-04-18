@@ -11,19 +11,14 @@ public interface ISettings
 /// <summary>
 /// Settings implementation with environment-aware API URL resolution
 /// </summary>
-public class Settings : ISettings
+public class Settings(IMyEnvironment environment) : ISettings
 {
-    private readonly IMyEnvironment _environment;
+    private readonly IMyEnvironment _environment = environment;
 
     // TODO: Update these URLs for your deployment
     private const string ProductionApiUrl = "https://your-app-api.azurewebsites.net";
     private const string DevelopmentApiUrl = "https://localhost:7224";
     private const string AndroidEmulatorApiUrl = "https://10.0.2.2:7224";
-
-    public Settings(IMyEnvironment environment)
-    {
-        _environment = environment;
-    }
 
     public string ApiUrl
     {

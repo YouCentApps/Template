@@ -3,14 +3,9 @@ using Template.Shared.Services.State;
 
 namespace Template.Shared.Services.Api;
 
-public class AuthenticationMessageHandler : DelegatingHandler
+public class AuthenticationMessageHandler(AuthStateService authStateService) : DelegatingHandler
 {
-    private readonly AuthStateService _authStateService;
-
-    public AuthenticationMessageHandler(AuthStateService authStateService)
-    {
-        _authStateService = authStateService;
-    }
+    private readonly AuthStateService _authStateService = authStateService;
 
     protected override async Task<HttpResponseMessage> SendAsync(
         HttpRequestMessage request,

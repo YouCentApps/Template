@@ -19,21 +19,14 @@ public interface IAuthenticationService
 /// <summary>
 /// Service for handling user authentication
 /// </summary>
-public class AuthenticationService : IAuthenticationService
+public class AuthenticationService(
+    ITableClientFactory tableClientFactory,
+    IUserRepository userRepository,
+    Action<string, string>? sendEmailCallback = null) : IAuthenticationService
 {
-    private readonly ITableClientFactory _tableClientFactory;
-    private readonly IUserRepository _userRepository;
-    private readonly Action<string, string>? _sendEmailCallback;
-
-    public AuthenticationService(
-        ITableClientFactory tableClientFactory,
-        IUserRepository userRepository,
-        Action<string, string>? sendEmailCallback = null)
-    {
-        _tableClientFactory = tableClientFactory;
-        _userRepository = userRepository;
-        _sendEmailCallback = sendEmailCallback;
-    }
+    private readonly ITableClientFactory _tableClientFactory = tableClientFactory;
+    private readonly IUserRepository _userRepository = userRepository;
+    private readonly Action<string, string>? _sendEmailCallback = sendEmailCallback;
 
     public async Task<(bool Success, string ActualEmail, string ErrorMessage)> SendOTPAsync(string emailOrUsername)
     {

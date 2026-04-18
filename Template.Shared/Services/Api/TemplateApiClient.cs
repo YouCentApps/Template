@@ -34,14 +34,9 @@ public interface ITemplateApiClient
     Task<ApiClientResponse<MessageResponse>> AdminDeleteUserAsync(string userId);
 }
 
-public class TemplateApiClient : ITemplateApiClient
+public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
 {
-    private readonly HttpClient _httpClient;
-
-    public TemplateApiClient(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
+    private readonly HttpClient _httpClient = httpClient;
 
     // Authentication
     public async Task<ApiClientResponse<RegisterVerificationResponse>> SendRegistrationVerificationAsync(string email, string username, string password, string preferredAuthMethod)

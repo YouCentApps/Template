@@ -1,9 +1,9 @@
 namespace Template.Shared.Services.State;
 
-public class AuthStateService
+public class AuthStateService(IStorageService? storageService = null)
 {
     private const string StorageKey = "template_session";
-    private readonly IStorageService? _storageService;
+    private readonly IStorageService? _storageService = storageService;
     private bool _isHandlingExpiration;
 
     private string? _userId;
@@ -17,11 +17,6 @@ public class AuthStateService
     public string? UserId => _userId;
     public string? Username => _username;
     public string? SessionId => _sessionId;
-
-    public AuthStateService(IStorageService? storageService = null)
-    {
-        _storageService = storageService;
-    }
 
     public async Task InitializeAsync()
     {

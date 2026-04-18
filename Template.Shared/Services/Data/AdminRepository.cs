@@ -21,14 +21,9 @@ public interface IAdminRepository
 /// <summary>
 /// Repository implementation for Admin operations with Azure Table Storage
 /// </summary>
-public class AdminRepository : IAdminRepository
+public class AdminRepository(ITableClientFactory tableClientFactory) : IAdminRepository
 {
-    private readonly ITableClientFactory _tableClientFactory;
-
-    public AdminRepository(ITableClientFactory tableClientFactory)
-    {
-        _tableClientFactory = tableClientFactory;
-    }
+    private readonly ITableClientFactory _tableClientFactory = tableClientFactory;
 
     public async Task<Admin?> GetAdminAsync(string userId)
     {
