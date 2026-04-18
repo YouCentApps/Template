@@ -1,6 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Template.Api.Middleware;
-using Template.Shared.Models;
 using Template.Shared.Services.Data;
 
 namespace Template.Api.Endpoints;

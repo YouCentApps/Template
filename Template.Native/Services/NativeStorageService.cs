@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Template.Shared.Services.State;
 
 namespace Template.Native.Services;
 

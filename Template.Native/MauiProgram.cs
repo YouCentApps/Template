@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Template.Native.Services;
-using Template.Shared.Configuration;
 using Template.Shared.Services.Api;
-using Template.Shared.Services.State;
 
 namespace Template.Native;
 

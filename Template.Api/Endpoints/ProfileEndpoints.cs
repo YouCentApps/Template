@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-using Template.Api.Middleware;
 using Template.Shared.Helpers;
 using Template.Shared.Services.Data;
 

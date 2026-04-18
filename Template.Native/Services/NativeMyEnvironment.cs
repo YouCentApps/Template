@@ -1,5 +1,3 @@
-using Template.Shared.Configuration;
-
 namespace Template.Native.Services;
 
 /// <summary>

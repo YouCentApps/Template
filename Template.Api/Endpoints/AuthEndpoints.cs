@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
 using Template.Shared.Services.Auth;
 
 namespace Template.Api.Endpoints;

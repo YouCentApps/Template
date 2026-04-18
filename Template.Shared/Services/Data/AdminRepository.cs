@@ -1,7 +1,5 @@
 using Azure;
 using Azure.Data.Tables;
-using Template.Shared.Models;
-using Template.Shared.Helpers;
 
 namespace Template.Shared.Services.Data;
 
