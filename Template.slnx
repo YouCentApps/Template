@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
     <File Path="Docs/DB_STRUCTURE.md" />
     <File Path="Tools/Rename-Template.ps1" />
     <Project Path="Tools/Template.DbInit/Template.DbInit.csproj" />
