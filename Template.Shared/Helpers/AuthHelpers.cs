@@ -68,20 +68,26 @@ public static class OTPHelper
 public static class InputValidator
 {
     /// <summary>
-    /// Normalize username to lowercase for case-insensitive lookups
+    /// Normalize username to lowercase for case-insensitive lookups.
+    /// Lowercase is intentional — Azure Table Storage OData filters use exact string matching,
+    /// so all normalized values must be consistently lowercase to match stored data.
     /// </summary>
+#pragma warning disable CA1308 // Normalize strings to uppercase
     public static string NormalizeUsername(string username)
     {
         return username.Trim().ToLowerInvariant();
     }
 
     /// <summary>
-    /// Normalize email to lowercase
+    /// Normalize email to lowercase.
+    /// Lowercase is intentional — Azure Table Storage OData filters use exact string matching,
+    /// so all normalized values must be consistently lowercase to match stored data.
     /// </summary>
     public static string NormalizeEmail(string email)
     {
         return email.Trim().ToLowerInvariant();
     }
+#pragma warning restore CA1308 // Normalize strings to uppercase
 
     /// <summary>
     /// Generate a unique user ID

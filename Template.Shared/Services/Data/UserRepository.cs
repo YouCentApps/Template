@@ -31,7 +31,9 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
         try
         {
+            #pragma warning disable CA1308 // Normalize strings to uppercase — intentional, see InputValidator.NormalizeEmail
             var normalizedEmail = email.ToLowerInvariant();
+#pragma warning restore CA1308
             var safeEmail = normalizedEmail.Replace("'", "''", StringComparison.Ordinal);
             var filter = $"Email eq '{safeEmail}'";
             
@@ -54,7 +56,9 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
         try
         {
+            #pragma warning disable CA1308 // Normalize strings to uppercase — intentional, see InputValidator.NormalizeUsername
             var normalizedUsername = username.ToLowerInvariant();
+#pragma warning restore CA1308
             var safeUsername = normalizedUsername.Replace("'", "''", StringComparison.Ordinal);
             var filter = $"NormalizedUsername eq '{safeUsername}'";
             
@@ -102,9 +106,11 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
             var entity = new TableEntity(partitionKey, rowKey)
             {
                 ["UserId"] = user.UserId,
+                #pragma warning disable CA1308 // Normalize strings to uppercase — intentional, Azure Table Storage requires consistent lowercase normalization
                 ["Email"] = user.Email.ToLowerInvariant(),
                 ["Username"] = user.Username,
                 ["NormalizedUsername"] = user.NormalizedUsername.ToLowerInvariant(),
+#pragma warning restore CA1308
                 ["PasswordHash"] = user.PasswordHash,
                 ["PasswordSalt"] = user.PasswordSalt,
                 ["PreferredAuthMethod"] = user.PreferredAuthMethod,
@@ -136,9 +142,11 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
             var entity = new TableEntity(partitionKey, rowKey)
             {
                 ["UserId"] = user.UserId,
+                #pragma warning disable CA1308 // Normalize strings to uppercase — intentional, Azure Table Storage requires consistent lowercase normalization
                 ["Email"] = user.Email.ToLowerInvariant(),
                 ["Username"] = user.Username,
                 ["NormalizedUsername"] = user.NormalizedUsername.ToLowerInvariant(),
+#pragma warning restore CA1308
                 ["PasswordHash"] = user.PasswordHash,
                 ["PasswordSalt"] = user.PasswordSalt,
                 ["PreferredAuthMethod"] = user.PreferredAuthMethod,

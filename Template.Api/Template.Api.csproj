@@ -2,8 +2,6 @@
 
   <PropertyGroup>
     <UserSecretsId>template-api-secrets</UserSecretsId>
-    <!-- CA1308: ToLowerInvariant is intentional for email/username normalization -->
-    <NoWarn>CA1308</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
