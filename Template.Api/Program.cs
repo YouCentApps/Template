@@ -3,6 +3,8 @@ using Template.Shared.Services.Auth;
 using Template.Api.Endpoints;
 using Template.Api.Services;
 
+#pragma warning disable CA1303 // Do not pass literals as localized parameters
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddEndpointsApiExplorer();
@@ -163,3 +165,5 @@ app.MapProfileEndpoints();
 app.MapAdminEndpoints();
 
 app.Run();
+
+#pragma warning restore CA1303 // Do not pass literals as localized parameters
