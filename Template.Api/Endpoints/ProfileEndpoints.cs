@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Template.Api.Middleware;
 using Template.Shared.Helpers;
-using Template.Shared.Services.Auth;
 using Template.Shared.Services.Data;
 
 namespace Template.Api.Endpoints;
