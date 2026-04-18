@@ -9,6 +9,11 @@ public static class AuthorizationExtensions
         HttpContext context,
         IAuthenticationService authService)
     {
+        if(context is null || authService is null)
+        {
+            return Results.InternalServerError();
+        }
+            
         if (!context.Request.Headers.TryGetValue("X-Session-Id", out var sessionId) ||
             string.IsNullOrEmpty(sessionId))
         {
@@ -35,6 +40,11 @@ public static class AuthorizationExtensions
         IAuthenticationService authService,
         IAdminRepository adminRepo)
     {
+        if (context is null || adminRepo is null)
+        {
+            return Results.InternalServerError();
+        }
+
         var sessionResult = await ValidateSession(context, authService).ConfigureAwait(false);
         if (sessionResult != null)
             return sessionResult;
@@ -59,6 +69,11 @@ public static class AuthorizationExtensions
         IAuthenticationService authService,
         IAdminRepository adminRepo)
     {
+        if (context is null || adminRepo is null)
+        {
+            return Results.InternalServerError();
+        }
+
         var adminResult = await ValidateAdminSession(context, authService, adminRepo).ConfigureAwait(false);
         if (adminResult != null)
             return adminResult;
@@ -79,13 +94,13 @@ public static class AuthorizationExtensions
     }
 
     public static string? GetUserId(this HttpContext context)
-        => context.Items["UserId"] as string;
+        => context?.Items["UserId"] as string;
 
     public static string? GetUsername(this HttpContext context)
-        => context.Items["Username"] as string;
+        => context?.Items["Username"] as string;
 
     public static string? GetSessionId(this HttpContext context)
-        => context.Items["SessionId"] as string;
+        => context?.Items["SessionId"] as string;
 }
 
 public static class EndpointAuthorizationExtensions

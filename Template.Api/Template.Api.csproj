@@ -3,11 +3,10 @@
   <PropertyGroup>
     <UserSecretsId>template-api-secrets</UserSecretsId>
     <!-- CA1515: ASP.NET minimal API types (records, static classes) must be public for binding/DI -->
-    <!-- CA1062: Null validation covered by ASP.NET request pipeline and Nullable=enable -->
     <!-- CA1031: Broad exception catches intentional in email/service wrappers -->
     <!-- CA1303: Console output localization not needed for a dev/startup API project -->
     <!-- CA1308: ToLowerInvariant is intentional for email/username normalization -->
-    <NoWarn>$(NoWarn);CA1515;CA1062;CA1031;CA1303;CA1308</NoWarn>
+    <NoWarn>$(NoWarn);CA1515;CA1031;CA1303;CA1308</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
