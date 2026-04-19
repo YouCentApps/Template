@@ -12,7 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Template.Shared\Template.Shared.csproj" />
+    <ProjectReference Include="..\Template.Common\Template.Common.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,4 @@
-using Template.Shared.Services.Data;
+using Template.Common.Services.Data;
 
 namespace Template.Api.Endpoints;
 

@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Template.Native.Services;
-using Template.Shared.Services.Api;
+using Template.Common.Services.Api;
 
 namespace Template.Native;
 

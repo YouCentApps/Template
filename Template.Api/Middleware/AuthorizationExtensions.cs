@@ -1,5 +1,5 @@
-using Template.Shared.Services.Auth;
-using Template.Shared.Services.Data;
+using Template.Common.Services.Auth;
+using Template.Common.Services.Data;
 
 namespace Template.Api.Middleware;
 

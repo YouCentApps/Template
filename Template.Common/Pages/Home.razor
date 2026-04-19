@@ -1,0 +1,48 @@
+@page "/"
+@using Template.Common.Services.State
+@inject AuthStateService AuthState
+
+<PageTitle>Home</PageTitle>
+
+<div class="page-container">
+    @if (AuthState.IsAuthenticated)
+    {
+        <div class="welcome-section">
+            <h1>Welcome back, @AuthState.Username!</h1>
+            <p class="lead">You're signed in and ready to go.</p>
+        </div>
+
+        <div class="quick-actions">
+            <a href="/settings" class="action-card">
+                <h3>Settings</h3>
+                <p>Manage your account and preferences</p>
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="hero-section">
+            <h1>Welcome</h1>
+            <p class="lead">Your application template is ready. Sign in or create an account to get started.</p>
+            <div class="cta-buttons">
+                <a href="/signin" class="btn btn-primary btn-lg">Sign In</a>
+                <a href="/signup" class="btn btn-outline btn-lg">Create Account</a>
+            </div>
+        </div>
+
+        <div class="features">
+            <div class="feature-card">
+                <h3>Secure Authentication</h3>
+                <p>Password and email code sign-in with session management</p>
+            </div>
+            <div class="feature-card">
+                <h3>Cross-Platform</h3>
+                <p>Web, Android, iOS, Windows, and macOS support</p>
+            </div>
+            <div class="feature-card">
+                <h3>Cloud Storage</h3>
+                <p>Azure Table Storage for scalable NoSQL data</p>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,316 @@
+@page "/settings"
+@using Template.Common.Services.Api
+@using Template.Common.Services.State
+@inject ITemplateApiClient ApiClient
+@inject AuthStateService AuthState
+@inject NavigationManager Navigation
+
+<PageTitle>Settings</PageTitle>
+
+<div class="settings-container">
+    @if (!AuthState.IsAuthenticated)
+    {
+        <div class="auth-container">
+            <div class="auth-card">
+                <h2>Please Sign In</h2>
+                <p class="text-center">You need to be signed in to view settings.</p>
+                <a href="/signin" class="btn btn-primary w-100">Sign In</a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="settings-header">
+            <h1>Settings</h1>
+            <p>Manage your account</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        @if (profile != null)
+        {
+            <div class="settings-grid">
+                <div class="detail-card">
+                    <h3>Account Information</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">Username</span>
+                        <span class="detail-value">@profile.Username</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Email</span>
+                        <span class="detail-value">@profile.Email</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Member since</span>
+                        <span class="detail-value">@profile.CreatedDate.ToString("MMM d, yyyy")</span>
+                    </div>
+                    @if (profile.LastLoginDate.HasValue)
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Last login</span>
+                            <span class="detail-value">@profile.LastLoginDate.Value.ToString("MMM d, yyyy h:mm tt")</span>
+                        </div>
+                    }
+                    @if (profile.IsAdmin)
+                    {
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="badge badge-info">Admin</span>
+                        </div>
+                    }
+                </div>
+
+                <div class="detail-card">
+                    <h3>Update Username</h3>
+                    <div class="auth-form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" @bind="newUsername" placeholder="New username" />
+                        </div>
+                        <button class="btn btn-primary" @onclick="UpdateUsername" disabled="@isSaving">
+                            @if (isSaving) { <span>Saving...</span> } else { <span>Update Username</span> }
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(usernameMessage))
+                    {
+                        <div class="alert alert-success" style="margin-top: 1rem;">@usernameMessage</div>
+                    }
+                </div>
+
+                <div class="detail-card">
+                    <h3>Update Password</h3>
+                    <div class="auth-form">
+                        @if (profile.HasPassword)
+                        {
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" class="form-control" @bind="oldPassword" placeholder="Current password" />
+                            </div>
+                        }
+                        <div class="form-group">
+                            <label>New Password</label>
+                            <input type="password" class="form-control" @bind="newPassword" placeholder="New password" />
+                        </div>
+                        <div class="form-group">
+                            <label>Confirm New Password</label>
+                            <input type="password" class="form-control" @bind="confirmNewPassword" placeholder="Confirm password" />
+                        </div>
+                        <button class="btn btn-primary" @onclick="UpdatePassword" disabled="@isSaving">
+                            @if (isSaving) { <span>Saving...</span> } else { <span>Update Password</span> }
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(passwordMessage))
+                    {
+                        <div class="alert alert-success" style="margin-top: 1rem;">@passwordMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(passwordError))
+                    {
+                        <div class="alert alert-danger" style="margin-top: 1rem;">@passwordError</div>
+                    }
+                </div>
+
+                <div class="detail-card">
+                    <h3>Sign-In Method</h3>
+                    <div class="auth-form">
+                        <div class="form-group">
+                            <label>Current Method</label>
+                            <span class="badge badge-info">@profile.PreferredAuthMethod</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Change To</label>
+                            <select class="form-control" @bind="newAuthMethod">
+                                <option value="Both">Both (Password & Email Code)</option>
+                                <option value="Password">Password Only</option>
+                                <option value="Email">Email Code Only</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" @onclick="UpdateAuthMethod" disabled="@isSaving">
+                            @if (isSaving) { <span>Saving...</span> } else { <span>Update Method</span> }
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(authMethodMessage))
+                    {
+                        <div class="alert alert-success" style="margin-top: 1rem;">@authMethodMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(authMethodError))
+                    {
+                        <div class="alert alert-danger" style="margin-top: 1rem;">@authMethodError</div>
+                    }
+                </div>
+            </div>
+        }
+        else if (isLoading)
+        {
+            <div class="loading-spinner">Loading profile...</div>
+        }
+    }
+</div>
+
+@code {
+    private UserProfileResponse? profile;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private string? errorMessage;
+    private string newUsername = "";
+    private string oldPassword = "";
+    private string newPassword = "";
+    private string confirmNewPassword = "";
+    private string? usernameMessage;
+    private string? passwordMessage;
+    private string? passwordError;
+    private string newAuthMethod = "Both";
+    private string? authMethodMessage;
+    private string? authMethodError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState.IsAuthenticated)
+        {
+            await LoadProfile();
+        }
+    }
+
+    private async Task LoadProfile()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await ApiClient.GetProfileAsync();
+            if (response.Success && response.Data != null)
+            {
+                profile = response.Data;
+                newUsername = profile.Username;
+                newAuthMethod = profile.PreferredAuthMethod;
+            }
+            else
+            {
+                errorMessage = response.Error ?? "Failed to load profile.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task UpdateUsername()
+    {
+        usernameMessage = null;
+        errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(newUsername))
+        {
+            errorMessage = "Username is required.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var response = await ApiClient.UpdateUsernameAsync(newUsername);
+            if (response.Success)
+            {
+                usernameMessage = "Username updated successfully!";
+                await LoadProfile();
+            }
+            else
+            {
+                errorMessage = response.Error ?? "Failed to update username.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task UpdatePassword()
+    {
+        passwordMessage = null;
+        passwordError = null;
+
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            passwordError = "New password is required.";
+            return;
+        }
+
+        if (newPassword != confirmNewPassword)
+        {
+            passwordError = "Passwords do not match.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var response = await ApiClient.UpdatePasswordAsync(
+                string.IsNullOrEmpty(oldPassword) ? null : oldPassword,
+                newPassword);
+            if (response.Success)
+            {
+                passwordMessage = "Password updated successfully!";
+                oldPassword = "";
+                newPassword = "";
+                confirmNewPassword = "";
+            }
+            else
+            {
+                passwordError = response.Error ?? "Failed to update password.";
+            }
+        }
+        catch (Exception ex)
+        {
+            passwordError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task UpdateAuthMethod()
+    {
+        authMethodMessage = null;
+        authMethodError = null;
+
+        if (newAuthMethod == profile?.PreferredAuthMethod)
+        {
+            authMethodError = "Already using this method.";
+            return;
+        }
+
+        isSaving = true;
+        try
+        {
+            var response = await ApiClient.UpdateAuthMethodAsync(newAuthMethod);
+            if (response.Success)
+            {
+                authMethodMessage = "Sign-in method updated successfully!";
+                await LoadProfile();
+            }
+            else
+            {
+                authMethodError = response.Error ?? "Failed to update auth method.";
+            }
+        }
+        catch (Exception ex)
+        {
+            authMethodError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

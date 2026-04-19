@@ -12,7 +12,7 @@ sealed class Program
     private static string? _accountName;
     private static string? _accountKey;
 
-    // Table names matching Template.Shared.Helpers.TableNames
+    // Table names matching Template.Common.Helpers.TableNames
     private static readonly string[] TableNames =
     [
         "TemplateUsers",

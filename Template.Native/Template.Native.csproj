@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+<Project Sdk="Microsoft.NET.Sdk.Razor">
 
     <PropertyGroup>
         <TargetFramework />
@@ -68,7 +68,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Template.Shared\Template.Shared.csproj" />
+      <ProjectReference Include="..\Template.Common\Template.Common.csproj" />
     </ItemGroup>
 
 </Project>

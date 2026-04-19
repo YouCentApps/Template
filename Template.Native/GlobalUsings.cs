@@ -1,2 +1,2 @@
-global using Template.Shared.Configuration;
-global using Template.Shared.Services.State;
+global using Template.Common.Configuration;
+global using Template.Common.Services.State;

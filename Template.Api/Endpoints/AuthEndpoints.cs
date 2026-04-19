@@ -1,4 +1,4 @@
-using Template.Shared.Services.Auth;
+using Template.Common.Services.Auth;
 
 namespace Template.Api.Endpoints;
 

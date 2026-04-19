@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Template.Shared.Services.Api;
-using Template.Shared.Services.State;
-using Template.Shared.Configuration;
+using Template.Common.Services.Api;
+using Template.Common.Services.State;
+using Template.Common.Configuration;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
-builder.RootComponents.Add<Template.Shared.App>("#app");
+builder.RootComponents.Add<Template.Common.App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure app settings

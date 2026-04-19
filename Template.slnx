@@ -8,6 +8,6 @@
   </Folder>
   <Project Path="Template.Api/Template.Api.csproj" />
   <Project Path="Template.Native/Template.Native.csproj" />
-  <Project Path="Template.Shared/Template.Shared.csproj" />
+  <Project Path="Template.Common/Template.Common.csproj" />
   <Project Path="Template.Web/Template.Web.csproj" />
 </Solution>
