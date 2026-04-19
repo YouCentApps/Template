@@ -1,1 +1,2 @@
-// Reserved for future global usings
+global using Template.Common.Configuration;
+global using Template.Common.Services.State;

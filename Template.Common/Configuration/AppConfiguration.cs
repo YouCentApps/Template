@@ -5,7 +5,7 @@ namespace Template.Common.Configuration;
 /// </summary>
 public interface IAppConfiguration
 {
-    string ApiBaseUrl { get; }
+    string? ApiBaseUrl { get; }
     bool IsDevelopment { get; }
 }
 
@@ -14,6 +14,6 @@ public interface IAppConfiguration
 /// </summary>
 public class AppConfiguration : IAppConfiguration
 {
-    public string ApiBaseUrl { get; set; } = "https://localhost:7224";
-    public bool IsDevelopment { get; set; } = true;
+    public string? ApiBaseUrl { get; set; }
+    public bool IsDevelopment { get; set; }
 }

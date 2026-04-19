@@ -1,21 +1,32 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Template.Common.Services.Api;
-using Template.Common.Services.State;
-using Template.Common.Configuration;
+using Template.Web.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<Template.Common.App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configure app settings
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7224";
-var isDevelopment = builder.HostEnvironment.IsDevelopment();
+//var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? string.Empty;
+//var isDevelopment = builder.HostEnvironment.IsDevelopment();
+
+
+// Environment and settings
+var environment = new WebMyEnvironment();
+var settings = new Settings(environment);
+
+
+//var appConfig = new AppConfiguration
+//{
+//    ApiBaseUrl = apiBaseUrl,
+//    IsDevelopment = isDevelopment
+//};
 
 var appConfig = new AppConfiguration
 {
-    ApiBaseUrl = apiBaseUrl,
-    IsDevelopment = isDevelopment
+    ApiBaseUrl = settings.ApiUrl,
+    IsDevelopment = environment.IsDevelopment()
 };
 
 builder.Services.AddSingleton<IAppConfiguration>(appConfig);
@@ -38,6 +49,11 @@ builder.Services.AddScoped(sp =>
     var authHandler = sp.GetRequiredService<AuthenticationMessageHandler>();
     authHandler.InnerHandler = new HttpClientHandler();
 
+    if (config.ApiBaseUrl is null)
+    {
+        throw new InvalidOperationException("API base URL is not configured.");
+    }
+
     return new HttpClient(authHandler) { BaseAddress = new Uri(config.ApiBaseUrl) };
 });
 
@@ -47,6 +63,6 @@ var host = builder.Build();
 
 // Initialize auth state (restore session from storage)
 var authState = host.Services.GetRequiredService<AuthStateService>();
-await authState.InitializeAsync();
+await authState.InitializeAsync().ConfigureAwait(false);
 
-await host.RunAsync();
+await host.RunAsync().ConfigureAwait(false);
