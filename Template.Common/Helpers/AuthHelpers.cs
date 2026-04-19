@@ -52,13 +52,11 @@ public static class OTPHelper
     /// </summary>
     public static string GenerateOTP()
     {
-        using (var rng = RandomNumberGenerator.Create())
-        {
-            byte[] randomBytes = new byte[4];
-            rng.GetBytes(randomBytes);
-            int value = Math.Abs(BitConverter.ToInt32(randomBytes, 0));
-            return (value % 1000000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
-        }
+        using var rng = RandomNumberGenerator.Create();
+        byte[] randomBytes = new byte[4];
+        rng.GetBytes(randomBytes);
+        int value = Math.Abs(BitConverter.ToInt32(randomBytes, 0));
+        return (value % 1000000).ToString("D6", System.Globalization.CultureInfo.InvariantCulture);
     }
 }
 
@@ -75,6 +73,9 @@ public static class InputValidator
 #pragma warning disable CA1308 // Normalize strings to uppercase
     public static string NormalizeUsername(string username)
     {
+        if (username is null)
+            return string.Empty;
+
         return username.Trim().ToLowerInvariant();
     }
 
@@ -85,6 +86,9 @@ public static class InputValidator
     /// </summary>
     public static string NormalizeEmail(string email)
     {
+        if (email is null)
+            return string.Empty;
+
         return email.Trim().ToLowerInvariant();
     }
 #pragma warning restore CA1308 // Normalize strings to uppercase

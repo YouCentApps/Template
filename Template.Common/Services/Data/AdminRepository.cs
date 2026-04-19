@@ -76,12 +76,17 @@ public class AdminRepository(ITableClientFactory tableClientFactory) : IAdminRep
             return admins;
         }
 
-        return admins.OrderBy(a => a.CreatedDate).ToList();
+        return [.. admins.OrderBy(a => a.CreatedDate)];
     }
 
     public async Task<bool> CreateAdminAsync(Admin admin)
     {
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Admins);
+
+        if (admin is null)
+        {
+            return false;
+        }
 
         try
         {
@@ -109,6 +114,11 @@ public class AdminRepository(ITableClientFactory tableClientFactory) : IAdminRep
 
     public async Task<bool> UpdateAdminAsync(Admin admin)
     {
+        if (admin is null)
+        {  
+            return false; 
+        }
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Admins);
 
         try

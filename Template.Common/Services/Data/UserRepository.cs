@@ -27,6 +27,9 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<User?> GetUserByEmailAsync(string email)
     {
+        if (email == null)
+            return null;
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
@@ -52,6 +55,9 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<User?> GetUserByUsernameAsync(string username)
     {
+        if (string.IsNullOrWhiteSpace(username))
+            return null;
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
@@ -77,13 +83,16 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<User?> GetUserByIdAsync(string userId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return null;
+        
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
         {
             // Use first 6 chars as partition key, rest as row key
-            var partitionKey = userId.Length >= 6 ? userId.Substring(0, 6) : userId;
-            var rowKey = userId.Length > 6 ? userId.Substring(6) : string.Empty;
+            string partitionKey = userId.Length >= 6 ? userId[..6] : userId;
+            string rowKey = userId.Length > 6 ? userId[6..] : string.Empty;
             
             var response = await tableClient.GetEntityAsync<TableEntity>(partitionKey, rowKey).ConfigureAwait(false);
             return MapToUser(response.Value);
@@ -96,12 +105,15 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<bool> CreateUserAsync(User user)
     {
+        if (user == null || string.IsNullOrWhiteSpace(user.UserId))
+            return false;
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
         {
-            var partitionKey = user.UserId.Substring(0, 6);
-            var rowKey = user.UserId.Substring(6);
+            string partitionKey = user.UserId.Length >= 6 ? user.UserId[..6] : user.UserId;
+            string rowKey = user.UserId.Length > 6 ? user.UserId[6..] : string.Empty;
 
             var entity = new TableEntity(partitionKey, rowKey)
             {
@@ -132,12 +144,15 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<bool> UpdateUserAsync(User user)
     {
+        if (user == null || string.IsNullOrWhiteSpace(user.UserId))
+            return false;
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
         {
-            var partitionKey = user.UserId.Substring(0, 6);
-            var rowKey = user.UserId.Substring(6);
+            string partitionKey = user.UserId.Length >= 6 ? user.UserId[..6] : user.UserId;
+            string rowKey = user.UserId.Length > 6 ? user.UserId[6..] : string.Empty;
 
             var entity = new TableEntity(partitionKey, rowKey)
             {
@@ -177,12 +192,15 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
 
     public async Task<bool> DeleteUserAsync(string userId)
     {
+        if (string.IsNullOrWhiteSpace(userId))
+            return false;
+
         var tableClient = _tableClientFactory.GetTableClient(TableNames.Users);
 
         try
         {
-            var partitionKey = userId.Substring(0, 6);
-            var rowKey = userId.Substring(6);
+            string partitionKey = userId.Length >= 6 ? userId[..6] : userId;
+            string rowKey = userId.Length > 6 ? userId[6..] : string.Empty;
             
             await tableClient.DeleteEntityAsync(partitionKey, rowKey).ConfigureAwait(false);
             return true;
@@ -210,7 +228,7 @@ public class UserRepository(ITableClientFactory tableClientFactory) : IUserRepos
             return users;
         }
 
-        return users.OrderBy(u => u.CreatedDate).ToList();
+        return [.. users.OrderBy(u => u.CreatedDate)];
     }
 
     private static User MapToUser(TableEntity entity)

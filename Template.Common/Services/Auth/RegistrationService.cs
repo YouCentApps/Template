@@ -1,5 +1,6 @@
 using Azure;
 using Azure.Data.Tables;
+using Template.Common.Pages;
 using Template.Common.Services.Data;
 
 namespace Template.Common.Services.Auth;
@@ -113,6 +114,11 @@ public class RegistrationService(
     public async Task<(bool Success, string UserId, string Username, string SessionId, string ErrorMessage)> CompleteRegistrationAsync(
         string tempUserId, string otpCode)
     {
+        if (tempUserId is null)
+        {
+            return (false, string.Empty, string.Empty, string.Empty, "Invalid temporary user ID");
+        }
+
         var pendingRegClient = _tableClientFactory.GetTableClient("TemplatePendingReg");
         var otpClient = _tableClientFactory.GetTableClient(TableNames.OTPCodes);
 
@@ -179,9 +185,7 @@ public class RegistrationService(
         {
             await pendingRegClient.DeleteEntityAsync("PendingReg", tempUserId).ConfigureAwait(false);
         }
-        #pragma warning disable CA1031
-                catch { /* Ignore cleanup errors */ }
-        #pragma warning restore CA1031
+        catch { /* Ignore cleanup errors */ }
 
         // Create session
         var sessionId = Guid.NewGuid().ToString();

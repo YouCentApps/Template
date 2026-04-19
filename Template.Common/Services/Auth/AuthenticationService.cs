@@ -30,9 +30,13 @@ public class AuthenticationService(
 
     public async Task<(bool Success, string ActualEmail, string ErrorMessage)> SendOTPAsync(string emailOrUsername)
     {
-        // Find user by email or username
-        User? user = null;
+        if (string.IsNullOrWhiteSpace(emailOrUsername))
+        {
+            return (false, string.Empty, "Email or username is required");
+        }
 
+        // Find user by email or username
+        User? user;
         if (emailOrUsername.Contains('@', StringComparison.Ordinal))
         {
             user = await _userRepository.GetUserByEmailAsync(emailOrUsername).ConfigureAwait(false);
@@ -133,9 +137,13 @@ public class AuthenticationService(
     public async Task<(bool Success, string UserId, string Username, string SessionId, string ErrorMessage)> SignInWithPasswordAsync(
         string emailOrUsername, string password)
     {
-        // Find user
-        User? user = null;
+        if (string.IsNullOrWhiteSpace(emailOrUsername) || string.IsNullOrWhiteSpace(password))
+        {
+            return (false, string.Empty, string.Empty, string.Empty, "Email/username and password are required");
+        }
 
+        // Find user
+        User? user;
         if (emailOrUsername.Contains('@', StringComparison.Ordinal))
         {
             user = await _userRepository.GetUserByEmailAsync(emailOrUsername).ConfigureAwait(false);

@@ -11,6 +11,14 @@ public class AuthenticationMessageHandler(AuthStateService authStateService) : D
         HttpRequestMessage request,
         CancellationToken cancellationToken)
     {
+        if(request is null)
+        {
+            return new HttpResponseMessage(HttpStatusCode.BadRequest)
+            {
+                Content = new StringContent("Request cannot be null.")
+            };
+        }
+
         var isAuthEndpoint = request.RequestUri?.PathAndQuery.Contains("/api/auth/", StringComparison.Ordinal) ?? false;
 
         if (!isAuthEndpoint && !string.IsNullOrEmpty(_authStateService.SessionId))
