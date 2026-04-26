@@ -55,7 +55,7 @@ public static class MauiProgram
 			var authHandler = sp.GetRequiredService<AuthenticationMessageHandler>();
 			authHandler.InnerHandler = new HttpClientHandler();
 
-			return new HttpClient(authHandler) { BaseAddress = new Uri(config.ApiBaseUrl) };
+			return new HttpClient(authHandler) { BaseAddress = config.ApiBaseUrl };
 		});
 
 		builder.Services.AddSingleton<ITemplateApiClient, TemplateApiClient>();

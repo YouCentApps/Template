@@ -5,7 +5,7 @@ namespace Template.Common.Configuration;
 /// </summary>
 public interface ISettings
 {
-    string ApiUrl { get; }
+    Uri ApiUrl { get; }
 }
 
 /// <summary>
@@ -16,11 +16,11 @@ public class Settings(IMyEnvironment environment) : ISettings
     private readonly IMyEnvironment _environment = environment;
 
     // TODO: Update these URLs for your deployment
-    private const string ProductionApiUrl = "https://your-app-api.azurewebsites.net";
-    private const string DevelopmentApiUrl = "https://localhost:7224";
-    private const string AndroidEmulatorApiUrl = "https://10.0.2.2:7224";
+    private static readonly Uri ProductionApiUrl = new("https://your-app-api.azurewebsites.net");
+    private static readonly Uri DevelopmentApiUrl = new("https://localhost:7224");
+    private static readonly Uri AndroidEmulatorApiUrl = new("https://10.0.2.2:7224");
 
-    public string ApiUrl
+    public Uri ApiUrl
     {
         get
         {

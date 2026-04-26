@@ -54,7 +54,7 @@ builder.Services.AddScoped(sp =>
         throw new InvalidOperationException("API base URL is not configured.");
     }
 
-    return new HttpClient(authHandler) { BaseAddress = new Uri(config.ApiBaseUrl) };
+    return new HttpClient(authHandler) { BaseAddress = config.ApiBaseUrl };
 });
 
 builder.Services.AddScoped<ITemplateApiClient, TemplateApiClient>();
