@@ -179,11 +179,21 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
             var error = await ParseErrorResponseAsync(response).ConfigureAwait(false);
             return new ApiClientResponse<T> { Success = false, Error = error };
         }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
+        catch (UriFormatException)
         {
-            return new ApiClientResponse<T> { Success = false, Error = ex.Message };
+            return new ApiClientResponse<T> { Data = default, Success = false, Error = "The request URL is invalid. Please contact support." };
+        }
+        catch (HttpRequestException)
+        {
+            return new ApiClientResponse<T> { Success = false, Error = "A connection error occurred while processing the request. Please try again." };
+        }
+        catch (InvalidOperationException)
+        {
+            return new ApiClientResponse<T> { Success = false, Error = "An error occurred while processing the request. Please try again." };
+        }
+        catch (OperationCanceledException)
+        {
+            return new ApiClientResponse<T> { Success = false, Error = "The request timed out. Please try again." };
         }
     }
 
@@ -200,11 +210,9 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
             var error = await ParseErrorResponseAsync(response).ConfigureAwait(false);
             return new ApiClientResponse<T> { Success = false, Error = error };
         }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
+        catch (OperationCanceledException)
         {
-            return new ApiClientResponse<T> { Success = false, Error = ex.Message };
+            return new ApiClientResponse<T> { Success = false, Error = "The request timed out. Please try again." };
         }
     }
 
@@ -221,11 +229,9 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
             var error = await ParseErrorResponseAsync(response).ConfigureAwait(false);
             return new ApiClientResponse<T> { Success = false, Error = error };
         }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
+        catch (OperationCanceledException)
         {
-            return new ApiClientResponse<T> { Success = false, Error = ex.Message };
+            return new ApiClientResponse<T> { Success = false, Error = "The request timed out. Please try again." };
         }
     }
 
@@ -242,11 +248,17 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
             var error = await ParseErrorResponseAsync(response).ConfigureAwait(false);
             return new ApiClientResponse<T> { Success = false, Error = error };
         }
-#pragma warning disable CA1031
-        catch (Exception ex)
-#pragma warning restore CA1031
+        catch (HttpRequestException)
         {
-            return new ApiClientResponse<T> { Success = false, Error = ex.Message };
+            return new ApiClientResponse<T> { Success = false, Error = "A connection error occurred while processing the request. Please try again." };
+        }
+        catch (OperationCanceledException)
+        {
+            return new ApiClientResponse<T> { Success = false, Error = "The request timed out. Please try again." };
+        }
+        catch (InvalidOperationException)
+        {
+            return new ApiClientResponse<T> { Success = false, Error = "An error occurred while processing the request. Please try again." };
         }
     }
 
@@ -267,11 +279,13 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
 
             return errorContent;
         }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
+        catch (JsonException)
         {
-            return "An error occurred. Please try again.";
+            return "An error occurred while processing the response. Please try again.";
+        }
+        catch (ArgumentException)
+        {
+            return "An error occurred while processing the response. Please try again.";
         }
     }
 }

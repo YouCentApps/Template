@@ -185,7 +185,8 @@ public class RegistrationService(
         {
             await pendingRegClient.DeleteEntityAsync("PendingReg", tempUserId).ConfigureAwait(false);
         }
-        catch { /* Ignore cleanup errors */ }
+        catch (RequestFailedException) { /* Ignore cleanup errors */ }
+        
 
         // Create session
         var sessionId = Guid.NewGuid().ToString();

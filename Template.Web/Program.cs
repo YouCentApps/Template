@@ -7,21 +7,9 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<Template.Common.App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Configure app settings
-//var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? string.Empty;
-//var isDevelopment = builder.HostEnvironment.IsDevelopment();
-
-
 // Environment and settings
 var environment = new WebMyEnvironment();
 var settings = new Settings(environment);
-
-
-//var appConfig = new AppConfiguration
-//{
-//    ApiBaseUrl = apiBaseUrl,
-//    IsDevelopment = isDevelopment
-//};
 
 var appConfig = new AppConfiguration
 {
