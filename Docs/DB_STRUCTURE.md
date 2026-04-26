@@ -6,6 +6,17 @@ This template uses **Azure Table Storage** as its database. Tables are partition
 
 ---
 
+## Local Azure Storage Emulator (Azurite) startup instructions:
+1. Install Azurite globally:
+   ```bash
+   npm install -g azurite
+   ```
+2. Start Azurite:
+   ```bash
+   azurite --silent --location c:\azurite --debug c:\azurite\debug.log
+   ```
+
+
 ## Table Schemas
 
 ### 1. **TemplateUsers** (User Accounts)
