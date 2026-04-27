@@ -156,9 +156,7 @@ internal static class AdminEndpoints
                 return Results.BadRequest(new { error = "Search query must be at least 2 characters" });
 
             var allUsers = await userRepo.GetAllUsersAsync().ConfigureAwait(false);
-#pragma warning disable CA1308 // Normalize strings to uppercase — intentional, matches stored lowercase normalization
-            var searchLower = q.ToLowerInvariant();
-#pragma warning restore CA1308
+            var searchLower = q.ToUpperInvariant();
             var results = allUsers
                 .Where(u => (u.Username?.Contains(searchLower, StringComparison.OrdinalIgnoreCase) ?? false) ||
                             (u.Email?.Contains(searchLower, StringComparison.OrdinalIgnoreCase) ?? false))
@@ -214,10 +212,8 @@ internal static class AdminEndpoints
                 return Results.NotFound(new { error = "User not found" });
 
             user.Username = request.Username;
-#pragma warning disable CA1308 // Normalize strings to uppercase — intentional, matches stored lowercase normalization
-            user.NormalizedUsername = request.Username.ToLowerInvariant();
-            user.Email = request.Email.ToLowerInvariant();
-#pragma warning restore CA1308
+            user.NormalizedUsername = request.Username.ToUpperInvariant();
+            user.Email = request.Email.ToUpperInvariant();
             user.IsActive = request.IsActive;
 
             var success = await userRepo.UpdateUserAsync(user).ConfigureAwait(false);

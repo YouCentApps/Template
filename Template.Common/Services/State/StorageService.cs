@@ -24,9 +24,15 @@ public class BrowserStorageService(IJSRuntime jsRuntime) : IStorageService
 
             return JsonSerializer.Deserialize<T>(json);
         }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
+        catch (JsonException)
+        {
+            return default;
+        }
+        catch (ArgumentNullException)
+        {
+            return default;
+        }
+        catch (NotSupportedException)
         {
             return default;
         }
@@ -39,11 +45,13 @@ public class BrowserStorageService(IJSRuntime jsRuntime) : IStorageService
             var json = JsonSerializer.Serialize(value);
             await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, json).ConfigureAwait(false);
         }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
+        catch (NotSupportedException)
         {
-            // Silently fail if localStorage is not available
+            // Silently fail
+        }
+        catch (ArgumentNullException)
+        {
+            // Silently fail
         }
     }
 
@@ -53,9 +61,7 @@ public class BrowserStorageService(IJSRuntime jsRuntime) : IStorageService
         {
             await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", key).ConfigureAwait(false);
         }
-#pragma warning disable CA1031
-        catch
-#pragma warning restore CA1031
+        catch (ArgumentNullException)
         {
             // Silently fail
         }

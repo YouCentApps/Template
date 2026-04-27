@@ -3,7 +3,6 @@ using Template.Common.Services.Auth;
 using Template.Api.Endpoints;
 using Template.Api.Services;
 
-#pragma warning disable CA1303 // Do not pass literals as localized parameters
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,16 +36,17 @@ builder.Services.AddCors(options =>
 });
 
 // Register Azure Storage factory
-var storageUri = builder.Configuration["AzureStorage:StorageUri"];
+var storageUri = new Uri(builder.Configuration["AzureStorage:StorageUri"]!);
 var accountName = builder.Configuration["AzureStorage:AccountName"];
 var accountKey = builder.Configuration["AzureStorage:AccountKey"];
 
-if (string.IsNullOrWhiteSpace(storageUri) || string.IsNullOrWhiteSpace(accountName) || string.IsNullOrWhiteSpace(accountKey))
+if (string.IsNullOrWhiteSpace(storageUri.AbsoluteUri) || string.IsNullOrWhiteSpace(accountName) || string.IsNullOrWhiteSpace(accountKey))
 {
-    Console.ForegroundColor = ConsoleColor.Yellow;
-    Console.WriteLine("WARNING: AzureStorage not configured. See appsettings.json.");
-    Console.WriteLine("Auth/profile/admin endpoints will fail until storage is configured.");
-    Console.ResetColor();
+
+    //Console.ForegroundColor = ConsoleColor.Yellow;
+    //Console.WriteLine("WARNING: AzureStorage not configured. See appsettings.json.");
+    //Console.WriteLine("Auth/profile/admin endpoints will fail until storage is configured.");
+    //Console.ResetColor();
 
     // Register a factory that throws helpful errors at runtime
     builder.Services.AddSingleton<ITableClientFactory>(sp =>
@@ -70,11 +70,11 @@ if (!string.IsNullOrWhiteSpace(smtpServer) && !string.IsNullOrWhiteSpace(smtpUse
 {
     builder.Services.AddScoped<IEmailService>(sp =>
         new EmailService(smtpServer, smtpPort, smtpUsername, smtpPassword, senderEmail ?? smtpUsername, senderName));
-    Console.WriteLine("Email service configured");
+    //Console.WriteLine("Email service configured");
 }
 else
 {
-    Console.WriteLine("Email service not configured - OTP codes will be logged to console only");
+    //Console.WriteLine("Email service not configured - OTP codes will be logged to console only");
 }
 
 // Register repositories
@@ -165,5 +165,3 @@ app.MapProfileEndpoints();
 app.MapAdminEndpoints();
 
 app.Run();
-
-#pragma warning restore CA1303 // Do not pass literals as localized parameters
