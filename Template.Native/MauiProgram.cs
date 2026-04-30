@@ -4,6 +4,7 @@ using Template.Common.Services.Api;
 
 namespace Template.Native;
 
+[SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "Must be public for XAML binding in MAUI projects")]
 public static class MauiProgram
 {
 	public static MauiApp CreateMauiApp()

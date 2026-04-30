@@ -5,6 +5,7 @@ namespace Template.Native.Services;
 /// <summary>
 /// MAUI-specific storage using Preferences API instead of browser localStorage
 /// </summary>
+[SuppressMessage("Maintainability", "CA1515:Consider making public types internal", Justification = "Must be public for XAML binding in MAUI projects")]
 public class NativeStorageService : IStorageService
 {
     public Task<T?> GetItemAsync<T>(string key)
