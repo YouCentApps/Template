@@ -3,7 +3,7 @@ namespace Template.Common.Helpers;
 /// <summary>
 /// Application-wide validation policies
 /// </summary>
-public static class Policy
+public static class ValidationPolicies
 {
     // Password policies
     public const int MinimumPasswordLength = 8;

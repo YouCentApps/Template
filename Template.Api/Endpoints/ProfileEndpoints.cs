@@ -58,9 +58,9 @@ internal static class ProfileEndpoints
             if (string.IsNullOrWhiteSpace(request.NewUsername))
                 return Results.BadRequest(new { error = "Username is required" });
 
-            if (request.NewUsername.Length < Policy.MinimumUsernameLength ||
-                request.NewUsername.Length > Policy.MaximumUsernameLength)
-                return Results.BadRequest(new { error = $"Username must be {Policy.MinimumUsernameLength}-{Policy.MaximumUsernameLength} characters" });
+            if (request.NewUsername.Length < ValidationPolicies.MinimumUsernameLength ||
+                request.NewUsername.Length > ValidationPolicies.MaximumUsernameLength)
+                return Results.BadRequest(new { error = $"Username must be {ValidationPolicies.MinimumUsernameLength}-{ValidationPolicies.MaximumUsernameLength} characters" });
 
             var existingUser = await userRepository.GetUserByUsernameAsync(request.NewUsername).ConfigureAwait(false);
             if (existingUser != null && existingUser.UserId != userId)
@@ -92,8 +92,8 @@ internal static class ProfileEndpoints
                 return Results.NotFound(new { error = "User not found" });
 
             if (string.IsNullOrWhiteSpace(request.NewPassword) ||
-                request.NewPassword.Length < Policy.MinimumPasswordLength)
-                return Results.BadRequest(new { error = $"Password must be at least {Policy.MinimumPasswordLength} characters" });
+                request.NewPassword.Length < ValidationPolicies.MinimumPasswordLength)
+                return Results.BadRequest(new { error = $"Password must be at least {ValidationPolicies.MinimumPasswordLength} characters" });
 
             var hasExistingPassword = !string.IsNullOrEmpty(user.PasswordHash);
 

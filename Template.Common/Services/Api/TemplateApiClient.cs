@@ -168,6 +168,8 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
     // Helper methods
     private async Task<ApiClientResponse<T>> GetAsync<T>(string url)
     {
+        //var absUrl = new Uri(_httpClient.BaseAddress + url);
+
         try
         {
             var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
@@ -237,6 +239,8 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
 
     private async Task<ApiClientResponse<T>> DeleteAsync<T>(string url)
     {
+        //var absUrl = new Uri(_httpClient.BaseAddress + url);
+
         try
         {
             var response = await _httpClient.DeleteAsync(url).ConfigureAwait(false);

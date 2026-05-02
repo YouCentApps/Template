@@ -22,7 +22,7 @@ sealed class Program
         "TemplatePendingReg"
     ];
 
-    static async Task Main(string[] args)
+    static async Task Main()
     {
         Console.WriteLine("===========================================");
         Console.WriteLine("Template Database Initialization Tool");
@@ -47,9 +47,9 @@ sealed class Program
             return;
         }
 
-        var createTables = bool.TryParse(_configuration["Options:CreateTables"], out var ct) ? ct : true;
-        var addSampleData = bool.TryParse(_configuration["Options:AddSampleData"], out var asd) ? asd : true;
-        var dropExisting = bool.TryParse(_configuration["Options:DropExistingTables"], out var de) ? de : false;
+        var createTables = !bool.TryParse(_configuration["Options:CreateTables"], out var ct) || ct;
+        var addSampleData = !bool.TryParse(_configuration["Options:AddSampleData"], out var asd) || asd;
+        var dropExisting = bool.TryParse(_configuration["Options:DropExistingTables"], out var de) && de;
 
         Console.WriteLine($"Storage Account: {_accountName}");
         Console.WriteLine($"Create Tables: {createTables}");
@@ -92,9 +92,7 @@ sealed class Program
             Console.WriteLine("===========================================");
             Console.ResetColor();
         }
-        #pragma warning disable CA1031
         catch (Exception ex)
-#pragma warning restore CA1031
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"\nERROR: {ex.Message}");
@@ -201,9 +199,9 @@ sealed class Program
         var userEntity = new TableEntity(partitionKey, rowKey)
         {
             ["UserId"] = userId,
-            ["Email"] = email.ToLowerInvariant(),
+            ["Email"] = email.ToUpperInvariant(),
             ["Username"] = username,
-            ["NormalizedUsername"] = username.ToLowerInvariant(),
+            ["NormalizedUsername"] = username.ToUpperInvariant(),
             ["PasswordHash"] = hash,
             ["PasswordSalt"] = salt,
             ["PreferredAuthMethod"] = preferredAuthMethod,

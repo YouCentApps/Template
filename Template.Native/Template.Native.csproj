@@ -34,9 +34,9 @@
 		<!-- Allow unsafe blocks for CsWinRT generic interfaces -->
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-        <!-- CA1031: Broad exception catches intentional in platform storage service -->
+        
         <!-- CA5392: P/Invoke DllImportSearchPath from auto-generated WindowsAppSDK package code -->
-        <NoWarn>$(NoWarn);CA1031;CA5392</NoWarn>
+        <NoWarn>$(NoWarn);CA5392</NoWarn>
 
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
