@@ -126,6 +126,8 @@ internal static class AuthEndpoints
 
 // Request DTOs
 #pragma warning disable CA1812
+//These records are only used as request models and are instantiated by the framework,
+//so they may appear unused in code analysis tools.
 internal sealed record RegisterRequest(string Email, string Username, string Password, string? PreferredAuthMethod);
 internal sealed record VerifyRegistrationRequest(string TempUserId, string OtpCode);
 internal sealed record SendOtpRequest(string EmailOrUsername);

@@ -18,12 +18,12 @@ public class NativeStorageService : IStorageService
 
             return Task.FromResult(JsonSerializer.Deserialize<T>(json));
         }
-#pragma warning disable CA1031 // Do not catch general exception types
+#pragma warning disable CA1031 // We catch all exceptions to prevent app crashes due to storage issues
         catch
         {
             return Task.FromResult(default(T));
         }
-#pragma warning restore CA1031 // Do not catch general exception types
+#pragma warning restore CA1031
     }
 
     public Task SetItemAsync<T>(string key, T value)
@@ -33,12 +33,12 @@ public class NativeStorageService : IStorageService
             var json = JsonSerializer.Serialize(value);
             Preferences.Default.Set(key, json);
         }
-#pragma warning disable CA1031 // Do not catch general exception types
+#pragma warning disable CA1031 // We catch all exceptions to prevent app crashes due to storage issues
         catch
         {
             // Silently fail
         }
-#pragma warning restore CA1031 // Do not catch general exception types
+#pragma warning restore CA1031
         return Task.CompletedTask;
     }
 

@@ -158,6 +158,8 @@ internal static class ProfileEndpoints
 
 // Request DTOs
 #pragma warning disable CA1812
+//These records are only used as request models and are instantiated by the framework,
+//so they may appear unused in code analysis tools.
 internal sealed record UpdateUsernameRequest(string NewUsername);
 internal sealed record UpdatePasswordRequest(string? OldPassword, string NewPassword);
 internal sealed record UpdateAuthMethodRequest(string NewAuthMethod);

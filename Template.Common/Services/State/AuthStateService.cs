@@ -1,5 +1,7 @@
 namespace Template.Common.Services.State;
 
+public delegate Task SessionExpiredCallback(object? sender, EventArgs e);
+
 public class AuthStateService(IStorageService? storageService = null)
 {
     private const string StorageKey = "template_session";
@@ -10,8 +12,11 @@ public class AuthStateService(IStorageService? storageService = null)
     private string? _username;
     private string? _sessionId;
 
-    public event Action? OnAuthStateChanged;
-    public event Func<Task>? OnSessionExpired;
+    public event EventHandler? OnAuthStateChanged;
+
+#pragma warning disable CA1003 // EventHandler<T> cannot return Task; a custom delegate is required for async event invocation
+    public event SessionExpiredCallback? OnSessionExpired;
+#pragma warning restore CA1003
 
     public bool IsAuthenticated => !string.IsNullOrEmpty(_userId);
     public string? UserId => _userId;
@@ -81,7 +86,7 @@ public class AuthStateService(IStorageService? storageService = null)
 
             if (OnSessionExpired != null)
             {
-                await OnSessionExpired.Invoke().ConfigureAwait(false);
+                await OnSessionExpired.Invoke(this, EventArgs.Empty).ConfigureAwait(false);
             }
         }
         finally
@@ -90,5 +95,5 @@ public class AuthStateService(IStorageService? storageService = null)
         }
     }
 
-    private void NotifyStateChanged() => OnAuthStateChanged?.Invoke();
+    private void NotifyStateChanged() => OnAuthStateChanged?.Invoke(this, EventArgs.Empty);
 }

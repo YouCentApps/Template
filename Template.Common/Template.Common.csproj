@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <!-- CA1003: Action/Func events are idiomatic in Blazor component patterns -->
     <!-- CA2234: Relative URL strings are required when HttpClient has a configured BaseAddress -->
-    <NoWarn>$(NoWarn);CA1003;CA2234</NoWarn>
+    <NoWarn>$(NoWarn)CA2234</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

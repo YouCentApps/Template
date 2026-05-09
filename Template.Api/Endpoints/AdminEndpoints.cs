@@ -242,7 +242,9 @@ internal static class AdminEndpoints
 }
 
 // Request DTOs
-#pragma warning disable CA1812
+#pragma warning disable CA1812 
+//These records are only used as request models and are instantiated by the framework,
+//so they may appear unused in code analysis tools.
 internal sealed record CreateAdminRequest(string UserId, bool IsActive, bool CanManageAdmins);
 internal sealed record UpdateAdminRequest(bool IsActive, bool CanManageAdmins);
 internal sealed record AdminUpdateUserRequest(string Username, string Email, bool IsActive);

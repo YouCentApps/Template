@@ -67,7 +67,7 @@
         await CheckAdminStatus();
     }
 
-    private async void OnAuthStateChanged()
+    private async void OnAuthStateChanged(object? sender, EventArgs e)
     {
         await CheckAdminStatus();
         await InvokeAsync(StateHasChanged);

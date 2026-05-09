@@ -172,7 +172,7 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
 
         try
         {
-            var response = await _httpClient.GetAsync(url).ConfigureAwait(false);
+            var response = await _httpClient.GetAsync(new Uri(url, UriKind.RelativeOrAbsolute)).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
                 var data = await response.Content.ReadFromJsonAsync<T>().ConfigureAwait(false);
@@ -243,7 +243,7 @@ public class TemplateApiClient(HttpClient httpClient) : ITemplateApiClient
 
         try
         {
-            var response = await _httpClient.DeleteAsync(url).ConfigureAwait(false);
+            var response = await _httpClient.DeleteAsync(new Uri(url, UriKind.RelativeOrAbsolute)).ConfigureAwait(false);
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<T>().ConfigureAwait(false);
