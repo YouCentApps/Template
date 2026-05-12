@@ -8,7 +8,7 @@ public static class ValidationPolicies
     // Password policies
     public const int MinimumPasswordLength = 8;
     public const int MaximumPasswordLength = 40;
-    public const string PasswordRegex = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).*$";
+    public const string PasswordRegex = @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$";
 
     // Username policies
     public const int MinimumUsernameLength = 3;

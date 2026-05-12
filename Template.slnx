@@ -6,8 +6,10 @@
     <File Path="Tools/Rename-Template.ps1" />
     <Project Path="Tools/Template.DbInit/Template.DbInit.csproj" />
   </Folder>
+  <Project Path="Template.Api.UnitTests/Template.Api.UnitTests.csproj" Id="021b19de-72ea-4861-82d5-9975fb818138" />
   <Project Path="Template.Api/Template.Api.csproj" />
   <Project Path="Template.Native/Template.Native.csproj" />
+  <Project Path="Template.Common.UnitTests/Template.Common.UnitTests.csproj" Id="1107f7c8-0bad-41c7-9d04-a90dc17a2f89" />
   <Project Path="Template.Common/Template.Common.csproj" />
   <Project Path="Template.Web/Template.Web.csproj" />
 </Solution>
