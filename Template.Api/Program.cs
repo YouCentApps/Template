@@ -40,7 +40,9 @@ var storageUri = new Uri(builder.Configuration["AzureStorage:StorageUri"]!);
 var accountName = builder.Configuration["AzureStorage:AccountName"];
 var accountKey = builder.Configuration["AzureStorage:AccountKey"];
 
-if (string.IsNullOrWhiteSpace(storageUri.AbsoluteUri) || string.IsNullOrWhiteSpace(accountName) || string.IsNullOrWhiteSpace(accountKey))
+if (string.IsNullOrWhiteSpace(storageUri.AbsoluteUri)
+    || string.IsNullOrWhiteSpace(accountName)
+    || string.IsNullOrWhiteSpace(accountKey))
 {
 
     //Console.ForegroundColor = ConsoleColor.Yellow;
@@ -50,7 +52,7 @@ if (string.IsNullOrWhiteSpace(storageUri.AbsoluteUri) || string.IsNullOrWhiteSpa
 
     // Register a factory that throws helpful errors at runtime
     builder.Services.AddSingleton<ITableClientFactory>(sp =>
-        throw new InvalidOperationException("AzureStorage is not configured. Set StorageUri, AccountName, and AccountKey in appsettings.json."));
+        throw new InvalidOperationException("AzureStorage is not configured. Set StorageUri, AccountName, and AccountKey in appropriate configuration."));
 }
 else
 {
@@ -58,7 +60,7 @@ else
         new TableClientFactory(storageUri, accountName, accountKey));
 }
 
-// Register Email Service (optional - OTP codes logged to console when not configured)
+// Register Email Service
 var smtpServer = builder.Configuration["EmailSettings:SmtpServer"];
 var smtpPort = builder.Configuration.GetValue<int>("EmailSettings:SmtpPort", 587);
 var smtpUsername = builder.Configuration["EmailSettings:Username"];
@@ -74,7 +76,7 @@ if (!string.IsNullOrWhiteSpace(smtpServer) && !string.IsNullOrWhiteSpace(smtpUse
 }
 else
 {
-    //Console.WriteLine("Email service not configured - OTP codes will be logged to console only");
+    //Console.WriteLine("Email service not configured");
 }
 
 // Register repositories
@@ -151,13 +153,14 @@ app.UseHttpsRedirection();
 app.UseCors("AllowClients");
 
 // Health check
-app.MapGet("/api/health", () => Results.Ok(new
-{
-    status = "healthy",
-    timestamp = DateTime.UtcNow,
-    environment = app.Environment.EnvironmentName
-}))
-.WithName("HealthCheck");
+app.MapGet("/api/health", () => Results.Ok(
+    new 
+    {
+        status = "healthy",
+        timestamp = DateTime.UtcNow,
+        environment = app.Environment.EnvironmentName
+    })
+).WithName("HealthCheck");
 
 // Map API endpoints
 app.MapAuthEndpoints();
