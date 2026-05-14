@@ -11,9 +11,13 @@ This template uses **Azure Table Storage** as its database. Tables are partition
    ```bash
    npm install -g azurite
    ```
-2. Start Azurite:
+2. Start Azurite (Windows):
    ```bash
    azurite --silent --location c:\azurite --debug c:\azurite\debug.log
+   ```
+   Start Azurite (Linux/Mac):
+   ```bash
+      azurite --silent --location ~/azurite --debug ~/azurite/debug.log
    ```
 
 
