@@ -40,11 +40,11 @@ internal sealed class EmailService(string smtpServer, int smtpPort, string usern
         }
         catch (SmtpException ex)
         {
-            Console.WriteLine($"Failed to send email to {toEmail}: {ex.Message}");
+            Console.WriteLine($"Failed to send code via email to {toEmail}: {ex.Message}");
         }
         catch (InvalidOperationException ex)
         {
-            Console.WriteLine($"Failed to send email to {toEmail}: {ex.Message}");
+            Console.WriteLine($"Failed to send code via email to {toEmail}: {ex.Message}");
         }
         catch (ArgumentException ex)
         {

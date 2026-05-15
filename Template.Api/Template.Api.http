@@ -4,13 +4,13 @@
 GET {{Template.Api_HostAddress}}/api/health
 Accept: application/json
 
-### Register - Send Verification
-POST {{Template.Api_HostAddress}}/api/auth/register/send-verification
+### Register
+POST {{Template.Api_HostAddress}}/api/auth/register
 Content-Type: application/json
 
 {
   "email": "test@example.com",
-  "username": "testuser",
+  "username": "testuser051426",
   "password": "Test1234!"
 }
 
@@ -19,7 +19,7 @@ POST {{Template.Api_HostAddress}}/api/auth/signin
 Content-Type: application/json
 
 {
-  "emailOrUsername": "testuser",
+  "emailOrUsername": "testuser051426",
   "password": "Test1234!"
 }
 
@@ -28,14 +28,14 @@ POST {{Template.Api_HostAddress}}/api/auth/validate-session
 Content-Type: application/json
 
 {
-  "sessionId": "your-session-id-here"
+  "sessionId": "731d4c83-1ea6-4433-9c19-84803c063de9"
 }
 
 ### Get Profile (requires X-Session-Id header)
 GET {{Template.Api_HostAddress}}/api/profile
-X-Session-Id: your-session-id-here
+X-Session-Id: 731d4c83-1ea6-4433-9c19-84803c063de9
 
 ### Get Admin Status
 GET {{Template.Api_HostAddress}}/api/admin/me
-X-Session-Id: your-session-id-here
+X-Session-Id: 731d4c83-1ea6-4433-9c19-84803c063de9
 
