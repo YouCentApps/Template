@@ -6,7 +6,7 @@
 	<ImplicitUsings>enable</ImplicitUsings>
 	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	<AnalysisMode>All</AnalysisMode>
-	<LangVersion>15.0</LangVersion>
+	<LangVersion>14.0</LangVersion>
 	<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
