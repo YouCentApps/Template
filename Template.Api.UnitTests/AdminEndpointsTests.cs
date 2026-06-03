@@ -283,4 +283,147 @@ public class AdminEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    // ── GET /api/admin/users ─────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task GetAllUsers_ReturnsList()
+    {
+        var users = new List<User>
+        {
+            new User { UserId = "1", Email = "a@test.com", Username = "alice", IsActive = true },
+            new User { UserId = "2", Email = "b@test.com", Username = "bob", IsActive = true }
+        };
+        _userRepoMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/users", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    // ── GET /api/admin/users/search ──────────────────────────────────────────
+
+    [TestMethod]
+    public async Task SearchUsers_ValidQuery_ReturnsResults()
+    {
+        var users = new List<User>
+        {
+            new User { UserId = "1", Email = "alice@test.com", Username = "alice", IsActive = true }
+        };
+        _userRepoMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/users/search?q=alice", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task SearchUsers_QueryTooShort_ReturnsBadRequest()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/users/search?q=a", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    // ── GET /api/admin/users/{userId} ────────────────────────────────────────
+
+    [TestMethod]
+    public async Task GetUser_ExistingUser_ReturnsUser()
+    {
+        var userId = "user1";
+        var user = new User { UserId = userId, Email = "user@test.com", Username = "testuser", IsActive = true };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        _adminRepoMock.Setup(r => r.IsActiveAdminAsync(userId)).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"/api/admin/users/{userId}", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task GetUser_NonExistingUser_ReturnsNotFound()
+    {
+        var userId = "ghost";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"/api/admin/users/{userId}", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    // ── PUT /api/admin/users/{userId} ─────────────────────────────────────────
+
+    [TestMethod]
+    public async Task UpdateUser_ExistingUser_ReturnsOk()
+    {
+        var userId = "user1";
+        var user = new User { UserId = userId, Email = "old@test.com", Username = "oldname", IsActive = true };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+
+        var requestData = new { Username = "newname", Email = "new@test.com", IsActive = true };
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/users/{userId}")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task UpdateUser_NonExistingUser_ReturnsNotFound()
+    {
+        var userId = "ghost";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync((User?)null);
+
+        var requestData = new { Username = "newname", Email = "new@test.com", IsActive = true };
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/users/{userId}")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    // ── DELETE /api/admin/users/{userId} ──────────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteUser_ExistingUser_ReturnsOk()
+    {
+        var userId = "user1";
+        _userRepoMock.Setup(r => r.DeleteUserAsync(userId)).ReturnsAsync(true);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/users/{userId}");
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task DeleteUser_NonExistingUser_ReturnsNotFound()
+    {
+        var userId = "ghost";
+        _userRepoMock.Setup(r => r.DeleteUserAsync(userId)).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/users/{userId}");
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
 }

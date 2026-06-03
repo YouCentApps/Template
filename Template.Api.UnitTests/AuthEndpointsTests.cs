@@ -213,6 +213,73 @@ public class AuthEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    // ── POST /api/auth/register/verify ──────────────────────────────────────
+
+    [TestMethod]
+    public async Task VerifyRegistration_ValidCode_Returns200WithSessionInfo()
+    {
+        _registrationServiceMock
+            .Setup(s => s.CompleteRegistrationAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((true, "user1", "johndoe", "session123", string.Empty));
+
+        var response = await _client.PostAsJsonAsync("/api/auth/register/verify",
+            new { tempUserId = "temp123", otpCode = "654321" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body.Should().ContainKey("userId");
+        body.Should().ContainKey("sessionId");
+    }
+
+    [TestMethod]
+    public async Task VerifyRegistration_InvalidCode_Returns400()
+    {
+        _registrationServiceMock
+            .Setup(s => s.CompleteRegistrationAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, string.Empty, string.Empty, string.Empty, "Invalid or expired verification code"));
+
+        var response = await _client.PostAsJsonAsync("/api/auth/register/verify",
+            new { tempUserId = "temp123", otpCode = "000000" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body.Should().ContainKey("error");
+    }
+
+    // ── POST /api/auth/register ───────────────────────────────────────────
+
+    [TestMethod]
+    public async Task RegisterDirect_ValidInputs_Returns200WithUserId()
+    {
+        _registrationServiceMock
+            .Setup(s => s.RegisterDirectAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((true, "user1", string.Empty));
+
+        var response = await _client.PostAsJsonAsync("/api/auth/register",
+            new { email = "new@test.com", username = "johndoe", password = "Pass1!", preferredAuthMethod = "Password" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body.Should().ContainKey("userId");
+    }
+
+    [TestMethod]
+    public async Task RegisterDirect_DuplicateUser_Returns400()
+    {
+        _registrationServiceMock
+            .Setup(s => s.RegisterDirectAsync(
+                It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((false, string.Empty, "Username or email already taken"));
+
+        var response = await _client.PostAsJsonAsync("/api/auth/register",
+            new { email = "taken@test.com", username = "takenuser", password = "Pass1!", preferredAuthMethod = "Password" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body.Should().ContainKey("error");
+    }
+
     // ── GET /api/health ───────────────────────────────────────────────────────
 
     [TestMethod]

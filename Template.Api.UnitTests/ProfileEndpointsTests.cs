@@ -193,4 +193,59 @@ public class ProfileEndpointsTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    // ── POST /api/profile/auth-method ──────────────────────────────────────
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_ValidRequest_ReturnsOk()
+    {
+        var userId = "user123";
+        var user = new User { UserId = userId, PasswordHash = "hash", PasswordSalt = "salt", Email = "user@test.com" };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+
+        var request = new { NewAuthMethod = "Both" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_InvalidMethod_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        var user = new User { UserId = userId };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+
+        var request = new { NewAuthMethod = "Invalid" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_PasswordWithoutPasswordSet_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        var user = new User { UserId = userId, PasswordHash = "", PasswordSalt = "" };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+
+        var request = new { NewAuthMethod = "Password" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_EmailWithoutEmailSet_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        var user = new User { UserId = userId, Email = "", PasswordHash = "hash", PasswordSalt = "salt" };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+
+        var request = new { NewAuthMethod = "Email" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }
