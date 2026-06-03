@@ -76,6 +76,17 @@ public class AdminEndpointsTests
     // ── GET /api/admin/me ─────────────────────────────────────────────────
 
     [TestMethod]
+    public async Task GetMyAdminStatus_NoSession_Returns401()
+    {
+        // Remove session header to simulate unauthenticated request
+        _client.DefaultRequestHeaders.Remove("X-Session-Id");
+
+        var response = await _client.GetAsync(new Uri("/api/admin/me", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [TestMethod]
     public async Task GetMyAdminStatus_UserIsAdmin_ReturnsAdminStatus()
     {
         var userId = "user123";
@@ -102,7 +113,7 @@ public class AdminEndpointsTests
         request.Headers.Add("X-Test-Role", "Admin");
         var response = await _client.SendAsync(request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     // ── GET /api/admin/admins/{userId} ──────────────────────────────────────
@@ -117,6 +128,8 @@ public class AdminEndpointsTests
         using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"/api/admin/admins/{userId}", UriKind.Relative));
         request.Headers.Add("X-Test-Role", "Admin");
         var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [TestMethod]
@@ -149,7 +162,24 @@ public class AdminEndpointsTests
         request.Headers.Add("X-Test-Role", "Admin");
         var response = await _client.SendAsync(request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task CreateAdmin_AlreadyAdmin_ReturnsBadRequest()
+    {
+        var requestData = new { UserId = "user1", IsActive = true, CanManageAdmins = false };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user1")).ReturnsAsync(new User { UserId = "user1" });
+        _adminRepoMock.Setup(r => r.GetAdminAsync("user1")).ReturnsAsync(new Admin { UserId = "user1" });
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/admins")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [TestMethod]
@@ -176,6 +206,7 @@ public class AdminEndpointsTests
         var userId = "admin1";
         var admin = new Admin { UserId = userId };
         _adminRepoMock.Setup(r => r.GetAdminAsync(userId)).ReturnsAsync(admin);
+        _adminRepoMock.Setup(r => r.UpdateAdminAsync(It.IsAny<Admin>())).ReturnsAsync(true);
 
         var requestData = new { IsActive = false, CanManageAdmins = true };
         using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/admins/{userId}")
@@ -185,7 +216,7 @@ public class AdminEndpointsTests
         request.Headers.Add("X-Test-Role", "Admin");
         var response = await _client.SendAsync(request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [TestMethod]
@@ -203,5 +234,53 @@ public class AdminEndpointsTests
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    // ── Authorization ──────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task RequireAdminManagement_NonManagerAdmin_Returns403()
+    {
+        // Admin without AdminManagement permission should get 403 on management endpoints
+        _adminRepoMock.Setup(r => r.IsActiveAdminAsync("user123")).ReturnsAsync(true);
+        _adminRepoMock.Setup(r => r.CanManageAdminsAsync("user123")).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/admins")
+        {
+            Content = JsonContent.Create(new { UserId = "newuser", IsActive = true, CanManageAdmins = false })
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    // ── DELETE /api/admin/admins/{userId} ────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task DeleteAdmin_ValidRequest_ReturnsOk()
+    {
+        var userId = "otherAdmin";
+        _adminRepoMock.Setup(r => r.DeleteAdminAsync(userId)).ReturnsAsync(true);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/admins/{userId}");
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task DeleteAdmin_SelfRemoval_ReturnsBadRequest()
+    {
+        // The TestAuthHandler sets UserId to "user123"
+        var userId = "user123";
+        _adminRepoMock.Setup(r => r.DeleteAdminAsync(userId)).ReturnsAsync(true);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/admins/{userId}");
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

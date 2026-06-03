@@ -74,6 +74,17 @@ public class ProfileEndpointsTests
     // ── GET /api/profile ─────────────────────────────────────────────────
 
     [TestMethod]
+    public async Task GetProfile_NoSession_Returns401()
+    {
+        // Remove session header to simulate unauthenticated request
+        _client.DefaultRequestHeaders.Remove("X-Session-Id");
+
+        var response = await _client.GetAsync(new Uri("/api/profile", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [TestMethod]
     public async Task GetProfile_ExistingUser_ReturnsProfile()
     {
         var userId = "user123";
@@ -110,7 +121,7 @@ public class ProfileEndpointsTests
         var request = new { NewUsername = "newname" };
         var response = await _client.PostAsJsonAsync("/api/profile/username", request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [TestMethod]
@@ -119,11 +130,10 @@ public class ProfileEndpointsTests
         var userId = "user123";
         _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
 
-        var request = new { NewUsername = "a" }; // Assuming min length > 1
+        var request = new { NewUsername = "ab" }; // Below MinimumUsernameLength (3)
         var response = await _client.PostAsJsonAsync("/api/profile/username", request);
 
-        // If it passes through auth, it should be 400. If not, it's 401.
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [TestMethod]
@@ -139,7 +149,7 @@ public class ProfileEndpointsTests
         var request = new { NewUsername = "taken" };
         var response = await _client.PostAsJsonAsync("/api/profile/username", request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     // ── POST /api/profile/password ──────────────────────────────────────────
@@ -147,13 +157,29 @@ public class ProfileEndpointsTests
     [TestMethod]
     public async Task UpdatePassword_ValidRequest_ReturnsOk()
     {
+        // Test first-time password setup (no existing password)
         var userId = "user123";
-        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, PasswordHash = "", PasswordSalt = "" });
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
 
         var request = new { NewPassword = "SecurePassword123!" };
         var response = await _client.PostAsJsonAsync("/api/profile/password", request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task UpdatePassword_MissingOldPasswordWhenHasPassword_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, PasswordHash = "hash", PasswordSalt = "salt" });
+
+        var request = new { NewPassword = "SecurePassword123!" };
+        var response = await _client.PostAsJsonAsync("/api/profile/password", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [TestMethod]
@@ -162,9 +188,9 @@ public class ProfileEndpointsTests
         var userId = "user123";
         _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
 
-        var request = new { NewPassword = "123" }; // Assuming min length > 3
+        var request = new { NewPassword = "short" }; // Below MinimumPasswordLength (8)
         var response = await _client.PostAsJsonAsync("/api/profile/password", request);
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
