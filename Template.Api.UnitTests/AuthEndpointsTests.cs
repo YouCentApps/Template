@@ -22,9 +22,10 @@ public class AuthEndpointsTests
         _authServiceMock = new Mock<IAuthenticationService>();
         _registrationServiceMock = new Mock<IRegistrationService>();
 
-        #pragma warning disable CA2000 // Disposed in TestCleanup
-                _factory = new WebApplicationFactory<Program>()
-        #pragma warning restore CA2000
+        // CA2000: The factory is disposed in [TestCleanup] which runs after each test method.
+        // MSTest guarantees Cleanup() execution, so we suppress the warning.
+        #pragma warning disable CA2000 // Dispose objects before losing scope
+        _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
                 builder.ConfigureServices(services =>
@@ -34,6 +35,7 @@ public class AuthEndpointsTests
                     services.AddScoped(_ => _registrationServiceMock.Object);
                 });
             });
+        #pragma warning restore CA2000
 
         _client = _factory.CreateClient();
     }

@@ -35,7 +35,9 @@ public class AdminEndpointsTests
         _adminRepoMock.Setup(r => r.IsActiveAdminAsync("user123")).ReturnsAsync(true);
         _adminRepoMock.Setup(r => r.CanManageAdminsAsync("user123")).ReturnsAsync(true);
 
-        #pragma warning disable CA2000 // Handled in Cleanup
+        // CA2000: The factory is disposed in [TestCleanup] which runs after each test method.
+        // MSTest guarantees Cleanup() execution, so we suppress the warning.
+        #pragma warning disable CA2000 // Dispose objects before losing scope
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -71,16 +73,6 @@ public class AdminEndpointsTests
         _factory.Dispose();
     }
 
-    private HttpClient CreateAuthenticatedClient(string userId)
-    {
-        // This is a simplification. In a real scenario, you would use a custom 
-        // AuthenticationHandler or a mock claim principal. 
-        // Since we don't have the exact implementation of .RequireAuth() 
-        // and .GetUserId(), we simulate the behavior or assume the 
-        // factory is configured to allow a specific header/token for tests.
-        return _client; 
-    }
-
     // ── GET /api/admin/me ─────────────────────────────────────────────────
 
     [TestMethod]
@@ -90,14 +82,12 @@ public class AdminEndpointsTests
         var admin = new Admin { UserId = userId, IsActive = true, CanManageAdmins = true };
         _adminRepoMock.Setup(r => r.GetAdminAsync(userId)).ReturnsAsync(admin);
 
-        // Note: To actually test the .RequireAuth() and GetUserId() extension, 
-        // the test infrastructure would need a Mock User Claims principal.
         var response = await _client.GetAsync(new Uri("/api/admin/me", UriKind.Relative));
 
-        // Since we aren't mocking the actual Auth middleware session, 
-        // this will likely return 401 unless we have a test-specific auth handler.
-        // For the sake of completing the implementation, I will implement the logic.
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body.Should().ContainKey("isAdmin");
+        body!["isAdmin"].ToString().Should().Be("True");
     }
 
     // ── GET /api/admin/admins ───────────────────────────────────────────────

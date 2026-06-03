@@ -2,11 +2,15 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Net;
 using System.Net.Http.Json;
+using System.Collections.Generic;
 using Template.Common.Services.Data;
 using Template.Common.Models;
+using Template.Common.Services.Auth;
+using AuthService = Template.Common.Services.Auth.IAuthenticationService;
 
 namespace Template.Api.UnitTests;
 
@@ -23,8 +27,15 @@ public class ProfileEndpointsTests
     {
         _userRepoMock = new Mock<IUserRepository>();
         _adminRepoMock = new Mock<IAdminRepository>();
+        var authServiceMock = new Mock<AuthService>();
 
-        #pragma warning disable CA2000 // Handled in Cleanup
+        // Mock all IAuthenticationService methods
+        authServiceMock.Setup(s => s.ValidateSessionAsync(It.IsAny<string>()))
+            .ReturnsAsync((true, "user123", "testuser", "mock-session-id", string.Empty));
+
+        // CA2000: The factory is disposed in [TestCleanup] which runs after each test method.
+        // MSTest guarantees Cleanup() execution, so we suppress the warning.
+        #pragma warning disable CA2000 // Dispose objects before losing scope
         _factory = new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -32,6 +43,7 @@ public class ProfileEndpointsTests
                 {
                     services.AddScoped(_ => _userRepoMock.Object);
                     services.AddScoped(_ => _adminRepoMock.Object);
+                    services.AddScoped(_ => authServiceMock.Object);
 
                     // Mock Authentication
                     services.AddAuthentication("TestScheme")
@@ -46,6 +58,10 @@ public class ProfileEndpointsTests
         #pragma warning restore CA2000
 
         _client = _factory.CreateClient();
+
+        // Set default headers for all requests
+        _client.DefaultRequestHeaders.Add("X-Test-Role", "User");
+        _client.DefaultRequestHeaders.Add("X-Session-Id", "mock-session-id");
     }
 
     [TestCleanup]
@@ -67,20 +83,17 @@ public class ProfileEndpointsTests
 
         var response = await _client.GetAsync(new Uri("/api/profile", UriKind.Relative));
 
-        // Expecting either 200 or 401 (since auth not mocked in factory)
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     [TestMethod]
     public async Task GetProfile_UserNotFound_ReturnsNotFound()
     {
-        // We would need a way to bypass .RequireAuth() to hit the 404 logic
-        // For currently provided infra, we simulate the flow
-        _userRepoMock.Setup(r => r.GetUserByIdAsync(It.IsAny<string>())).ReturnsAsync((User?)null);
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user123")).ReturnsAsync((User?)null);
 
         var response = await _client.GetAsync(new Uri("/api/profile", UriKind.Relative));
 
-        response.StatusCode.Should().NotBe(HttpStatusCode.InternalServerError);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     // ── POST /api/profile/username ────────────────────────────────────────
