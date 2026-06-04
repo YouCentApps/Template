@@ -101,6 +101,32 @@ public class AdminEndpointsTests
         body!["isAdmin"].ToString().Should().Be("True");
     }
 
+    [TestMethod]
+    public async Task GetMyAdminStatus_UserIsNotAdmin_ReturnsFalse()
+    {
+        _adminRepoMock.Setup(r => r.GetAdminAsync("user123")).ReturnsAsync((Admin?)null);
+
+        var response = await _client.GetAsync(new Uri("/api/admin/me", UriKind.Relative));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        body!["isAdmin"].ToString().Should().Be("False");
+        body!["canManageAdmins"].ToString().Should().Be("False");
+    }
+
+    [TestMethod]
+    public async Task RequireAdmin_NonAdminUser_Returns403()
+    {
+        // The TestAuthHandler still sets UserId/user claims, but the repo says
+        // this user is not an active admin, so RequireAdmin must reject with 403.
+        _adminRepoMock.Setup(r => r.IsActiveAdminAsync("user123")).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/admins", UriKind.Relative));
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
     // ── GET /api/admin/admins ───────────────────────────────────────────────
 
     [TestMethod]
@@ -198,6 +224,24 @@ public class AdminEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [TestMethod]
+    public async Task CreateAdmin_RepoFails_ReturnsBadRequest()
+    {
+        var requestData = new { UserId = "user1", IsActive = true, CanManageAdmins = false };
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user1")).ReturnsAsync(new User { UserId = "user1" });
+        _adminRepoMock.Setup(r => r.GetAdminAsync("user1")).ReturnsAsync((Admin?)null);
+        _adminRepoMock.Setup(r => r.CreateAdminAsync(It.IsAny<Admin>())).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/admin/admins")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
     // ── PUT /api/admin/admins/{userId} ──────────────────────────────────────
 
     [TestMethod]
@@ -234,6 +278,24 @@ public class AdminEndpointsTests
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task UpdateAdmin_RepoFails_ReturnsBadRequest()
+    {
+        var userId = "admin1";
+        _adminRepoMock.Setup(r => r.GetAdminAsync(userId)).ReturnsAsync(new Admin { UserId = userId });
+        _adminRepoMock.Setup(r => r.UpdateAdminAsync(It.IsAny<Admin>())).ReturnsAsync(false);
+
+        var requestData = new { IsActive = true, CanManageAdmins = false };
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/admins/{userId}")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     // ── Authorization ──────────────────────────────────────────────────────────────
@@ -284,6 +346,19 @@ public class AdminEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [TestMethod]
+    public async Task DeleteAdmin_NotFound_ReturnsNotFound()
+    {
+        var userId = "ghost";
+        _adminRepoMock.Setup(r => r.DeleteAdminAsync(userId)).ReturnsAsync(false);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/admin/admins/{userId}");
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     // ── GET /api/admin/users ─────────────────────────────────────────────────
 
     [TestMethod]
@@ -329,6 +404,34 @@ public class AdminEndpointsTests
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task SearchUsers_EmptyQuery_ReturnsBadRequest()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/users/search?q=", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task SearchUsers_NoMatches_ReturnsEmpty()
+    {
+        var users = new List<User>
+        {
+            new User { UserId = "1", Email = "alice@test.com", Username = "alice" }
+        };
+        _userRepoMock.Setup(r => r.GetAllUsersAsync()).ReturnsAsync(users);
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri("/api/admin/users/search?q=nobody", UriKind.Relative));
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<List<object>>();
+        body.Should().BeEmpty();
     }
 
     // ── GET /api/admin/users/{userId} ────────────────────────────────────────
@@ -397,6 +500,24 @@ public class AdminEndpointsTests
         var response = await _client.SendAsync(request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task UpdateUser_RepoFails_ReturnsBadRequest()
+    {
+        var userId = "user1";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
+
+        var requestData = new { Username = "newname", Email = "new@test.com", IsActive = true };
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"/api/admin/users/{userId}")
+        {
+            Content = JsonContent.Create(requestData)
+        };
+        request.Headers.Add("X-Test-Role", "Admin");
+        var response = await _client.SendAsync(request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     // ── DELETE /api/admin/users/{userId} ──────────────────────────────────────

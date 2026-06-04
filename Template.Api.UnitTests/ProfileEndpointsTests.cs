@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Template.Common.Services.Data;
 using Template.Common.Models;
 using Template.Common.Services.Auth;
+using Template.Common.Helpers;
 using AuthService = Template.Common.Services.Auth.IAuthenticationService;
 
 namespace Template.Api.UnitTests;
@@ -152,6 +153,29 @@ public class ProfileEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [TestMethod]
+    public async Task UpdateUsername_Empty_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
+
+        var request = new { NewUsername = "" };
+        var response = await _client.PostAsJsonAsync("/api/profile/username", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdateUsername_UserNotFound_ReturnsNotFound()
+    {
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user123")).ReturnsAsync((User?)null);
+
+        var request = new { NewUsername = "newname" };
+        var response = await _client.PostAsJsonAsync("/api/profile/username", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
     // ── POST /api/profile/password ──────────────────────────────────────────
 
     [TestMethod]
@@ -189,6 +213,62 @@ public class ProfileEndpointsTests
         _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(new User { UserId = userId });
 
         var request = new { NewPassword = "short" }; // Below MinimumPasswordLength (8)
+        var response = await _client.PostAsJsonAsync("/api/profile/password", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdatePassword_ValidOldPassword_ReturnsOk()
+    {
+        var userId = "user123";
+        var salt = PasswordHelper.GenerateSalt();
+        var hash = PasswordHelper.HashPassword("OldPass1!", salt);
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, PasswordHash = hash, PasswordSalt = salt });
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+
+        var request = new { OldPassword = "OldPass1!", NewPassword = "NewPass2!" };
+        var response = await _client.PostAsJsonAsync("/api/profile/password", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [TestMethod]
+    public async Task UpdatePassword_WrongOldPassword_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        var salt = PasswordHelper.GenerateSalt();
+        var hash = PasswordHelper.HashPassword("OldPass1!", salt);
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, PasswordHash = hash, PasswordSalt = salt });
+
+        var request = new { OldPassword = "WrongPass!", NewPassword = "NewPass2!" };
+        var response = await _client.PostAsJsonAsync("/api/profile/password", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdatePassword_UserNotFound_ReturnsNotFound()
+    {
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user123")).ReturnsAsync((User?)null);
+
+        var request = new { NewPassword = "NewPass2!" };
+        var response = await _client.PostAsJsonAsync("/api/profile/password", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task UpdatePassword_RepoFails_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, PasswordHash = "", PasswordSalt = "" });
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
+
+        var request = new { NewPassword = "NewPass2!" };
         var response = await _client.PostAsJsonAsync("/api/profile/password", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -242,6 +322,31 @@ public class ProfileEndpointsTests
         var userId = "user123";
         var user = new User { UserId = userId, Email = "", PasswordHash = "hash", PasswordSalt = "salt" };
         _userRepoMock.Setup(r => r.GetUserByIdAsync(userId)).ReturnsAsync(user);
+
+        var request = new { NewAuthMethod = "Email" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_UserNotFound_ReturnsNotFound()
+    {
+        _userRepoMock.Setup(r => r.GetUserByIdAsync("user123")).ReturnsAsync((User?)null);
+
+        var request = new { NewAuthMethod = "Email" };
+        var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task UpdateAuthMethod_RepoFails_ReturnsBadRequest()
+    {
+        var userId = "user123";
+        _userRepoMock.Setup(r => r.GetUserByIdAsync(userId))
+            .ReturnsAsync(new User { UserId = userId, Email = "x@y.com", PasswordHash = "h", PasswordSalt = "s" });
+        _userRepoMock.Setup(r => r.UpdateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
 
         var request = new { NewAuthMethod = "Email" };
         var response = await _client.PostAsJsonAsync("/api/profile/auth-method", request);
