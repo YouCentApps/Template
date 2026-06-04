@@ -30,14 +30,20 @@ public class RegistrationService(
     public async Task<(bool Success, string TempUserId, string ErrorMessage)> StartRegistrationAsync(
         string email, string username, string password, string preferredAuthMethod)
     {
+        // Normalize auth method so callers can pass "email", "Email", or "EMAIL" interchangeably.
+        var normalizedAuthMethod = preferredAuthMethod?.Trim() ?? string.Empty;
+        var isEmailAuth = string.Equals(normalizedAuthMethod, "Email", StringComparison.OrdinalIgnoreCase);
+        var isPasswordAuth = string.Equals(normalizedAuthMethod, "Password", StringComparison.OrdinalIgnoreCase);
+        var isBoth = string.Equals(normalizedAuthMethod, "Both", StringComparison.OrdinalIgnoreCase);
+
         // Validate inputs
         if (string.IsNullOrWhiteSpace(username))
             return (false, string.Empty, "Username is required");
 
-        if ((preferredAuthMethod == "Email" || preferredAuthMethod == "Both") && string.IsNullOrWhiteSpace(email))
+        if ((isEmailAuth || isBoth) && string.IsNullOrWhiteSpace(email))
             return (false, string.Empty, "Email is required for email authentication");
 
-        if ((preferredAuthMethod == "Password" || preferredAuthMethod == "Both") && string.IsNullOrWhiteSpace(password))
+        if ((isPasswordAuth || isBoth) && string.IsNullOrWhiteSpace(password))
             return (false, string.Empty, "Password is required for password authentication");
 
         // Check if user already exists
@@ -68,7 +74,7 @@ public class RegistrationService(
             ["NormalizedUsername"] = InputValidator.NormalizeUsername(username),
             ["PasswordHash"] = hash,
             ["PasswordSalt"] = salt,
-            ["PreferredAuthMethod"] = preferredAuthMethod,
+            ["PreferredAuthMethod"] = normalizedAuthMethod,
             ["ExpiryTime"] = DateTime.UtcNow.AddMinutes(30)
         };
 
@@ -211,11 +217,16 @@ public class RegistrationService(
     public async Task<(bool Success, string UserId, string ErrorMessage)> RegisterDirectAsync(
         string email, string username, string password, string preferredAuthMethod)
     {
+        // Normalize auth method so callers can pass "email", "Email", or "EMAIL" interchangeably.
+        var normalizedAuthMethod = preferredAuthMethod?.Trim() ?? string.Empty;
+        var isPasswordAuth = string.Equals(normalizedAuthMethod, "Password", StringComparison.OrdinalIgnoreCase);
+        var isBoth = string.Equals(normalizedAuthMethod, "Both", StringComparison.OrdinalIgnoreCase);
+
         // Validate inputs
         if (string.IsNullOrWhiteSpace(username))
             return (false, string.Empty, "Username is required");
 
-        if ((preferredAuthMethod == "Password" || preferredAuthMethod == "Both") && string.IsNullOrWhiteSpace(password))
+        if ((isPasswordAuth || isBoth) && string.IsNullOrWhiteSpace(password))
             return (false, string.Empty, "Password is required for password authentication");
 
         // Check existing users
@@ -243,7 +254,7 @@ public class RegistrationService(
             NormalizedUsername = InputValidator.NormalizeUsername(username),
             PasswordHash = hash,
             PasswordSalt = salt,
-            PreferredAuthMethod = preferredAuthMethod,
+            PreferredAuthMethod = normalizedAuthMethod,
             IsActive = true,
             CreatedDate = DateTime.UtcNow
         };

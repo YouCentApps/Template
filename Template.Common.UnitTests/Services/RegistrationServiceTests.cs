@@ -100,6 +100,47 @@ public class RegistrationServiceTests
     }
 
     [TestMethod]
+    public async Task StartRegistration_EmailRequiredForBothAuth_ReturnsFalse()
+    {
+        var (success, _, error) = await _sut.StartRegistrationAsync(
+            email: "", "johndoe", "Pass1!", "Both");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Email");
+    }
+
+    [TestMethod]
+    public async Task StartRegistration_NullEmailForEmailAuth_ReturnsFalse()
+    {
+        var (success, _, error) = await _sut.StartRegistrationAsync(
+            email: null!, "johndoe", "Pass1!", "Email");
+
+        success.Should().BeFalse();
+        error.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public async Task StartRegistration_CaseInsensitiveAuthMethod_EmailLowercase_AcceptsEmail()
+    {
+        // The service should accept "email" / "EMAIL" / "Email" interchangeably.
+        // "email" auth + empty email must still fail validation.
+        var (success, _, error) = await _sut.StartRegistrationAsync(
+            email: "", "johndoe", "Pass1!", "email");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Email");
+    }
+
+    [TestMethod]
+    public async Task StartRegistration_CaseInsensitiveAuthMethod_EmailLowercase_AllowsValidRegistration()
+    {
+        var (success, _, _) = await _sut.StartRegistrationAsync(
+            "new@test.com", "johndoe", password: "", "email");
+
+        success.Should().BeTrue();
+    }
+
+    [TestMethod]
     public async Task StartRegistration_PasswordRequiredForPasswordAuth_ReturnsFalse()
     {
         var (success, _, error) = await _sut.StartRegistrationAsync(
@@ -201,6 +242,115 @@ public class RegistrationServiceTests
         error.Should().Contain("expired");
     }
 
+    [TestMethod]
+    public async Task CompleteRegistration_PendingRegistrationNotFound_ReturnsFalse()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = "tempid",
+            ["Code"] = "123456",
+            ["Email"] = "USER@TEST.COM",
+            ["IsUsed"] = false
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeAsyncPageable<TableEntity>([otp]));
+
+        // Pending registration lookup throws 404.
+        _pendingTableMock.Setup(t => t.GetEntityAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new RequestFailedException(404, "Not Found"));
+
+        var (success, _, _, _, error) = await _sut.CompleteRegistrationAsync("tempid", "123456");
+
+        success.Should().BeFalse();
+        error.Should().Contain("not found");
+    }
+
+    [TestMethod]
+    public async Task CompleteRegistration_UserCreationFails_ReturnsFalse()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = "tempid",
+            ["Code"] = "123456",
+            ["Email"] = "USER@TEST.COM",
+            ["IsUsed"] = false
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeAsyncPageable<TableEntity>([otp]));
+
+        var pending = new TableEntity("PendingReg", "tempid")
+        {
+            ["Email"] = "USER@TEST.COM",
+            ["Username"] = "johndoe",
+            ["NormalizedUsername"] = "JOHNDOE",
+            ["PasswordHash"] = "hash",
+            ["PasswordSalt"] = "salt",
+            ["PreferredAuthMethod"] = "Both"
+        };
+        var pendingResponse = Mock.Of<Response<TableEntity>>(r => r.Value == pending);
+        _pendingTableMock.Setup(t => t.GetEntityAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pendingResponse);
+
+        _repoMock.Setup(r => r.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(false);
+
+        var (success, _, _, _, error) = await _sut.CompleteRegistrationAsync("tempid", "123456");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Failed to create user");
+    }
+
+    [TestMethod]
+    public async Task CompleteRegistration_ValidInputs_CreatesUserAndSession()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = "tempid",
+            ["Code"] = "123456",
+            ["Email"] = "USER@TEST.COM",
+            ["IsUsed"] = false
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeAsyncPageable<TableEntity>([otp]));
+
+        var pending = new TableEntity("PendingReg", "tempid")
+        {
+            ["Email"] = "USER@TEST.COM",
+            ["Username"] = "johndoe",
+            ["NormalizedUsername"] = "JOHNDOE",
+            ["PasswordHash"] = "hash",
+            ["PasswordSalt"] = "salt",
+            ["PreferredAuthMethod"] = "Both"
+        };
+        var pendingResponse = Mock.Of<Response<TableEntity>>(r => r.Value == pending);
+        _pendingTableMock.Setup(t => t.GetEntityAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<string>(),
+                It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pendingResponse);
+
+        _repoMock.Setup(r => r.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+
+        var (success, userId, username, sessionId, error) =
+            await _sut.CompleteRegistrationAsync("tempid", "123456");
+
+        success.Should().BeTrue();
+        userId.Should().NotBeNullOrWhiteSpace();
+        username.Should().Be("johndoe");
+        sessionId.Should().NotBeNullOrWhiteSpace();
+        error.Should().BeEmpty();
+
+        _repoMock.Verify(r => r.CreateUserAsync(It.IsAny<User>()), Times.Once);
+        _sessionTableMock.Verify(
+            t => t.AddEntityAsync(It.IsAny<TableEntity>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
     // ── RegisterDirectAsync – validation ─────────────────────────────────────
 
     [TestMethod]
@@ -274,5 +424,16 @@ public class RegistrationServiceTests
 
         success.Should().BeFalse();
         error.Should().NotBeEmpty();
+    }
+
+    [TestMethod]
+    public async Task RegisterDirect_CaseInsensitiveAuthMethod_LowercasePassword_Accepts()
+    {
+        _repoMock.Setup(r => r.CreateUserAsync(It.IsAny<User>())).ReturnsAsync(true);
+
+        var (success, _, _) = await _sut.RegisterDirectAsync(
+            "new@test.com", "johndoe", "Pass1!", "password");
+
+        success.Should().BeTrue();
     }
 }

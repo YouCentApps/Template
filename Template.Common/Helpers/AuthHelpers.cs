@@ -70,7 +70,7 @@ public static class InputValidator
     /// Uppercase is intentional — Azure Table Storage OData filters use exact string matching,
     /// so all normalized values must be consistently uppercase to match stored data.
     /// </summary>
-    public static string NormalizeUsername(string username)
+    public static string NormalizeUsername(string? username)
     {
         if (username is null)
             return string.Empty;
@@ -83,7 +83,7 @@ public static class InputValidator
     /// Uppercase is intentional — Azure Table Storage OData filters use exact string matching,
     /// so all normalized values must be consistently uppercase to match stored data.
     /// </summary>
-    public static string NormalizeEmail(string email)
+    public static string NormalizeEmail(string? email)
     {
         if (email is null)
             return string.Empty;

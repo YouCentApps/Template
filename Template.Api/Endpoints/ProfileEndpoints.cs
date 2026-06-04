@@ -134,14 +134,20 @@ internal static class ProfileEndpoints
             if (user == null)
                 return Results.NotFound(new { error = "User not found" });
 
-            var method = request.NewAuthMethod;
-            if (method != "Email" && method != "Password" && method != "Both")
+            var method = (request.NewAuthMethod ?? string.Empty).Trim();
+            if (!string.Equals(method, "Email", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(method, "Password", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(method, "Both", StringComparison.OrdinalIgnoreCase))
                 return Results.BadRequest(new { error = "Invalid auth method. Use Email, Password, or Both." });
 
-            if ((method == "Password" || method == "Both") && string.IsNullOrEmpty(user.PasswordHash))
+            var isPasswordAuth = string.Equals(method, "Password", StringComparison.OrdinalIgnoreCase);
+            var isEmailAuth = string.Equals(method, "Email", StringComparison.OrdinalIgnoreCase);
+            var isBoth = string.Equals(method, "Both", StringComparison.OrdinalIgnoreCase);
+
+            if ((isPasswordAuth || isBoth) && string.IsNullOrEmpty(user.PasswordHash))
                 return Results.BadRequest(new { error = "Cannot use password authentication without a password set. Set a password first." });
 
-            if ((method == "Email" || method == "Both") && string.IsNullOrEmpty(user.Email))
+            if ((isEmailAuth || isBoth) && string.IsNullOrEmpty(user.Email))
                 return Results.BadRequest(new { error = "Cannot use email authentication without an email set." });
 
             user.PreferredAuthMethod = method;

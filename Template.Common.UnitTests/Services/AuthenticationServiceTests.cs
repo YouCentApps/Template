@@ -10,6 +10,23 @@ using Template.Common.Services.Data;
 
 namespace Template.Common.UnitTests.Services;
 
+/// <summary>
+/// Creates a fake AsyncPageable from an in-memory list so Azure Table Storage
+/// query calls can be mocked without a real storage connection.
+/// </summary>
+file sealed class FakeOtpAsyncPageable<T>(IEnumerable<T> items) : AsyncPageable<T>
+    where T : notnull
+{
+    private readonly List<T> _items = [.. items];
+
+    public override async IAsyncEnumerable<Page<T>> AsPages(
+        string? continuationToken = null, int? pageSizeHint = null)
+    {
+        yield return Page<T>.FromValues(_items, continuationToken: null, response: null!);
+        await Task.CompletedTask;
+    }
+}
+
 [TestClass]
 public class AuthenticationServiceTests
 {
@@ -18,6 +35,7 @@ public class AuthenticationServiceTests
     private Mock<TableClient> _otpTableMock = null!;
     private Mock<TableClient> _sessionTableMock = null!;
     private List<string> _emailsSent = null!;
+    private List<string> _emailBodies = null!;
     private AuthenticationService _sut = null!;
 
     private static readonly User ActiveUser = new()
@@ -39,6 +57,7 @@ public class AuthenticationServiceTests
         _otpTableMock = new Mock<TableClient>();
         _sessionTableMock = new Mock<TableClient>();
         _emailsSent = [];
+        _emailBodies = [];
 
         _otpTableMock.Setup(t => t.CreateIfNotExistsAsync(It.IsAny<CancellationToken>()))
                      .ReturnsAsync((Response<TableItem>?)null);
@@ -55,7 +74,7 @@ public class AuthenticationServiceTests
         _sut = new AuthenticationService(
             _factoryMock.Object,
             _repoMock.Object,
-            sendEmailCallback: (email, _) => _emailsSent.Add(email));
+            sendEmailCallback: (email, body) => { _emailsSent.Add(email); _emailBodies.Add(body); });
     }
 
     // ── SendOTPAsync ──────────────────────────────────────────────────────────
@@ -111,6 +130,32 @@ public class AuthenticationServiceTests
     }
 
     [TestMethod]
+    public async Task SendOTP_EmailBodyContainsOtpCode()
+    {
+        _repoMock.Setup(r => r.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync(ActiveUser);
+
+        await _sut.SendOTPAsync("user@test.com");
+
+        _emailBodies.Should().ContainSingle();
+        _emailBodies[0].Should().MatchRegex(@"\b\d{6}\b",
+            because: "the email body should contain a 6-digit OTP code");
+    }
+
+    [TestMethod]
+    public async Task SendOTP_OtpTableAddFails_ReturnsFalse()
+    {
+        _repoMock.Setup(r => r.GetUserByEmailAsync(It.IsAny<string>())).ReturnsAsync(ActiveUser);
+        _otpTableMock.Setup(t => t.AddEntityAsync(It.IsAny<TableEntity>(), It.IsAny<CancellationToken>()))
+                     .ThrowsAsync(new RequestFailedException(500, "storage failure"));
+
+        var (success, _, error) = await _sut.SendOTPAsync("user@test.com");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Failed to send OTP");
+        _emailsSent.Should().BeEmpty(because: "no email should be sent when storage write fails");
+    }
+
+    [TestMethod]
     public async Task SendOTP_ValidUsername_LooksUpByUsername()
     {
         _repoMock.Setup(r => r.GetUserByUsernameAsync(It.IsAny<string>())).ReturnsAsync(ActiveUser);
@@ -120,6 +165,128 @@ public class AuthenticationServiceTests
         success.Should().BeTrue();
         _repoMock.Verify(r => r.GetUserByUsernameAsync(It.IsAny<string>()), Times.Once);
         _repoMock.Verify(r => r.GetUserByEmailAsync(It.IsAny<string>()), Times.Never);
+    }
+
+    // ── VerifyOTPAsync ────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public async Task VerifyOTP_NoMatchingOtp_ReturnsFalse()
+    {
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeOtpAsyncPageable<TableEntity>([]));
+
+        var (success, _, _, _, error) = await _sut.VerifyOTPAsync("user@test.com", "000000");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Invalid or expired");
+    }
+
+    [TestMethod]
+    public async Task VerifyOTP_WrongCode_ReturnsFalse()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = ActiveUser.UserId,
+            ["Code"] = "123456",
+            ["Email"] = ActiveUser.Email,
+            ["IsUsed"] = false,
+            ["ExpiryTime"] = DateTime.UtcNow.AddMinutes(10)
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeOtpAsyncPageable<TableEntity>([otp]));
+
+        var (success, _, _, _, error) = await _sut.VerifyOTPAsync("user@test.com", "999999");
+
+        success.Should().BeFalse();
+        error.Should().Contain("Invalid or expired");
+    }
+
+    [TestMethod]
+    public async Task VerifyOTP_ValidCode_CreatesSessionAndReturnsUserInfo()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = ActiveUser.UserId,
+            ["Code"] = "123456",
+            ["Email"] = ActiveUser.Email,
+            ["IsUsed"] = false,
+            ["ExpiryTime"] = DateTime.UtcNow.AddMinutes(10)
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeOtpAsyncPageable<TableEntity>([otp]));
+        _repoMock.Setup(r => r.GetUserByIdAsync(ActiveUser.UserId)).ReturnsAsync(ActiveUser);
+
+        var (success, userId, username, sessionId, error) =
+            await _sut.VerifyOTPAsync("user@test.com", "123456");
+
+        success.Should().BeTrue();
+        userId.Should().Be(ActiveUser.UserId);
+        username.Should().Be(ActiveUser.Username);
+        sessionId.Should().NotBeNullOrWhiteSpace();
+        error.Should().BeEmpty();
+
+        _repoMock.Verify(r => r.UpdateLastLoginAsync(ActiveUser.UserId), Times.Once);
+        _sessionTableMock.Verify(
+            t => t.AddEntityAsync(It.IsAny<TableEntity>(), It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public async Task VerifyOTP_InactiveUser_ReturnsFalse()
+    {
+        var inactiveUser = new User
+        {
+            UserId = ActiveUser.UserId,
+            Email = ActiveUser.Email,
+            Username = ActiveUser.Username,
+            NormalizedUsername = ActiveUser.NormalizedUsername,
+            IsActive = false
+        };
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = inactiveUser.UserId,
+            ["Code"] = "123456",
+            ["Email"] = inactiveUser.Email,
+            ["IsUsed"] = false,
+            ["ExpiryTime"] = DateTime.UtcNow.AddMinutes(10)
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeOtpAsyncPageable<TableEntity>([otp]));
+        _repoMock.Setup(r => r.GetUserByIdAsync(inactiveUser.UserId)).ReturnsAsync(inactiveUser);
+
+        var (success, _, _, _, error) = await _sut.VerifyOTPAsync("user@test.com", "123456");
+
+        success.Should().BeFalse();
+        error.Should().Contain("inactive");
+        _sessionTableMock.Verify(
+            t => t.AddEntityAsync(It.IsAny<TableEntity>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [TestMethod]
+    public async Task VerifyOTP_UserNotFoundById_ReturnsFalse()
+    {
+        var otp = new TableEntity("OTP", "row1")
+        {
+            ["UserId"] = "ghost-user",
+            ["Code"] = "123456",
+            ["Email"] = "ghost@test.com",
+            ["IsUsed"] = false,
+            ["ExpiryTime"] = DateTime.UtcNow.AddMinutes(10)
+        };
+        _otpTableMock.Setup(t => t.QueryAsync<TableEntity>(
+                It.IsAny<string>(), It.IsAny<int?>(), It.IsAny<IEnumerable<string>?>(), It.IsAny<CancellationToken>()))
+            .Returns(new FakeOtpAsyncPageable<TableEntity>([otp]));
+        _repoMock.Setup(r => r.GetUserByIdAsync("ghost-user")).ReturnsAsync((User?)null);
+
+        var (success, _, _, _, error) = await _sut.VerifyOTPAsync("ghost@test.com", "123456");
+
+        success.Should().BeFalse();
+        error.Should().Contain("not found");
     }
 
     // ── SignInWithPasswordAsync ───────────────────────────────────────────────

@@ -23,7 +23,7 @@ public class InputValidatorTests
     [TestMethod]
     public void NormalizeEmail_NullInput_ReturnsEmpty()
     {
-        InputValidator.NormalizeEmail(null!).Should().BeEmpty();
+        InputValidator.NormalizeEmail(null).Should().BeEmpty();
     }
 
     [TestMethod]
@@ -55,13 +55,19 @@ public class InputValidatorTests
     [TestMethod]
     public void NormalizeUsername_NullInput_ReturnsEmpty()
     {
-        InputValidator.NormalizeUsername(null!).Should().BeEmpty();
+        InputValidator.NormalizeUsername(null).Should().BeEmpty();
     }
 
     [TestMethod]
     public void NormalizeUsername_EmptyString_ReturnsEmpty()
     {
         InputValidator.NormalizeUsername(string.Empty).Should().BeEmpty();
+    }
+
+    [TestMethod]
+    public void NormalizeUsername_WhitespaceOnly_ReturnsEmpty()
+    {
+        InputValidator.NormalizeUsername("   ").Should().BeEmpty();
     }
 
     // ── GenerateUserId ────────────────────────────────────────────────────────

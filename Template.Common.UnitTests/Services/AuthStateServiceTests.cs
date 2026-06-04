@@ -117,6 +117,48 @@ public class AuthStateServiceTests
     }
 
     [TestMethod]
+    public async Task InitializeAsync_ValidSession_RaisesOnAuthStateChanged()
+    {
+        var session = new SessionData
+        {
+            UserId = "user1",
+            Username = "johndoe",
+            SessionId = "session123",
+            ExpiryDate = DateTime.UtcNow.AddDays(1)
+        };
+        _storageMock.Setup(s => s.GetItemAsync<SessionData>(It.IsAny<string>()))
+                    .ReturnsAsync(session);
+
+        var raised = false;
+        _sut.OnAuthStateChanged += (_, _) => raised = true;
+
+        await _sut.InitializeAsync();
+
+        raised.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task InitializeAsync_ExpiredSession_DoesNotRaiseOnAuthStateChanged()
+    {
+        var session = new SessionData
+        {
+            UserId = "user1",
+            Username = "johndoe",
+            SessionId = "session123",
+            ExpiryDate = DateTime.UtcNow.AddDays(-1)
+        };
+        _storageMock.Setup(s => s.GetItemAsync<SessionData>(It.IsAny<string>()))
+                    .ReturnsAsync(session);
+
+        var raised = false;
+        _sut.OnAuthStateChanged += (_, _) => raised = true;
+
+        await _sut.InitializeAsync();
+
+        raised.Should().BeFalse();
+    }
+
+    [TestMethod]
     public async Task InitializeAsync_ExpiredSession_DoesNotRestoreAuthState()
     {
         var session = new SessionData
@@ -178,7 +220,21 @@ public class AuthStateServiceTests
 
         await _sut.HandleSessionExpiredAsync();
 
+        // The handler ran exactly once. If the reentrancy guard were broken, the inner
+        // call would re-enter ClearAuthStateAsync, which would call RemoveItemAsync again.
         callCount.Should().Be(1);
+        _storageMock.Verify(s => s.RemoveItemAsync(It.IsAny<string>()), Times.Once);
+    }
+
+    [TestMethod]
+    public async Task HandleSessionExpiredAsync_NoSubscribers_DoesNotThrow()
+    {
+        await _sut.SetAuthStateAsync("user1", "johndoe", "session123");
+
+        await _sut.Invoking(s => s.HandleSessionExpiredAsync())
+                  .Should().NotThrowAsync();
+
+        _sut.IsAuthenticated.Should().BeFalse();
     }
 
     // ── No storage ────────────────────────────────────────────────────────────
