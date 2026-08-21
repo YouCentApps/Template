@@ -48,7 +48,7 @@ $filesChanged = 0
 
 foreach ($ext in $textExtensions) {
     $files = Get-ChildItem -Path $TemplateRoot -Filter $ext -Recurse -File -ErrorAction SilentlyContinue |
-             Where-Object { $_.FullName -notmatch '\\(bin|obj|\.vs|node_modules)\\' }
+             Where-Object { $_.FullName -notmatch '\\(bin|obj|\.vs|node_modules)\\' -and $_.FullName -notmatch '\\wwwroot\\lib\\' -and $_.Name -ne 'libman.json' }
 
     foreach ($file in $files) {
         $content = Get-Content -Path $file.FullName -Raw -ErrorAction SilentlyContinue
@@ -79,7 +79,7 @@ $renamedFiles = 0
 
 # Get all files with "Template" in name (deepest first to avoid path conflicts)
 $filesToRename = Get-ChildItem -Path $TemplateRoot -Recurse -File -ErrorAction SilentlyContinue |
-                 Where-Object { $_.Name -match 'Template' -and $_.FullName -notmatch '\\(bin|obj|\.vs)\\' } |
+                 Where-Object { $_.Name -match 'Template' -and $_.FullName -notmatch '\\(bin|obj|\.vs)\\' -and $_.FullName -notmatch '\\wwwroot\\lib\\' } |
                  Sort-Object { $_.FullName.Length } -Descending
 
 foreach ($file in $filesToRename) {
@@ -101,7 +101,7 @@ $renamedDirs = 0
 
 # Process deepest directories first to avoid path invalidation
 $dirsToRename = Get-ChildItem -Path $TemplateRoot -Recurse -Directory -ErrorAction SilentlyContinue |
-                Where-Object { $_.Name -match 'Template' -and $_.FullName -notmatch '\\(bin|obj|\.vs)\\' } |
+                Where-Object { $_.Name -match 'Template' -and $_.FullName -notmatch '\\(bin|obj|\.vs)\\' -and $_.FullName -notmatch '\\wwwroot\\lib\\' } |
                 Sort-Object { $_.FullName.Length } -Descending
 
 foreach ($dir in $dirsToRename) {
