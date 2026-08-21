@@ -37,8 +37,8 @@ $newUpper  = $NewName.ToUpper()             # MYAPP
 # File extensions to process for text replacement
 $textExtensions = @(
     "*.cs", "*.csproj", "*.slnx", "*.sln", "*.razor", "*.css", "*.html",
-    "*.json", "*.js", "*.xml", "*.md", "*.txt", "*.ps1", "*.yml", "*.yaml",
-    "*.props", "*.targets", "*.config", "*.http"
+    "*.json", "*.js", "*.xml", "*.xaml", "*.manifest", "*.md", "*.txt",
+    "*.ps1", "*.yml", "*.yaml", "*.props", "*.targets", "*.config", "*.http"
 )
 
 # Step 1: Replace text content in files
