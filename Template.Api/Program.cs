@@ -67,11 +67,12 @@ var smtpUsername = builder.Configuration["EmailSettings:Username"];
 var smtpPassword = builder.Configuration["EmailSettings:Password"];
 var senderEmail = builder.Configuration["EmailSettings:SenderEmail"];
 var senderName = builder.Configuration["EmailSettings:SenderName"] ?? "Template App";
+var receiverEmail = builder.Configuration["EmailSettings:ReceiverEmail"];
 
 if (!string.IsNullOrWhiteSpace(smtpServer) && !string.IsNullOrWhiteSpace(smtpUsername) && !string.IsNullOrWhiteSpace(smtpPassword))
 {
     builder.Services.AddScoped<IEmailService>(sp =>
-        new EmailService(smtpServer, smtpPort, smtpUsername, smtpPassword, senderEmail ?? smtpUsername, senderName));
+        new EmailService(smtpServer, smtpPort, smtpUsername, smtpPassword, senderEmail ?? smtpUsername, senderName, receiverEmail ?? senderEmail ?? smtpUsername));
     //Console.WriteLine("Email service configured");
 }
 else
